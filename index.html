@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>월별 자금현황 PDF Export</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -101,111 +102,6 @@
             100% { transform: rotate(360deg); }
         }
 
-        .pdf-preview {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
-            padding: 30px;
-            margin: 20px 0;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            max-height: 600px;
-            overflow-y: auto;
-        }
-
-        .report-header {
-            text-align: center;
-            border-bottom: 3px solid #4f46e5;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
-        }
-
-        .report-title {
-            font-size: 1.8em;
-            font-weight: bold;
-            color: #1f2937;
-            margin-bottom: 10px;
-        }
-
-        .report-date {
-            color: #6b7280;
-            font-size: 1em;
-        }
-
-        .summary-section {
-            background: #f8fafc;
-            border-radius: 10px;
-            padding: 20px;
-            margin: 20px 0;
-            border-left: 4px solid #3b82f6;
-        }
-
-        .section-title {
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #1f2937;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-        }
-
-        .section-title::before {
-            content: '';
-            width: 16px;
-            height: 16px;
-            margin-right: 8px;
-            border-radius: 50%;
-        }
-
-        .section-title.income::before {
-            background: #10b981;
-        }
-
-        .section-title.expense::before {
-            background: #ef4444;
-        }
-
-        .section-title.asset::before {
-            background: #8b5cf6;
-        }
-
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 15px 0;
-            font-size: 0.9em;
-        }
-
-        .data-table th,
-        .data-table td {
-            padding: 8px 12px;
-            text-align: right;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .data-table th {
-            text-align: left;
-            background: #f9fafb;
-            font-weight: 600;
-        }
-
-        .data-table .total-row {
-            background: #f3f4f6;
-            font-weight: bold;
-        }
-
-        .amount {
-            font-family: 'Courier New', monospace;
-            font-weight: bold;
-        }
-
-        .positive {
-            color: #059669;
-        }
-
-        .negative {
-            color: #dc2626;
-        }
-
         .btn {
             background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
             color: white;
@@ -224,29 +120,105 @@
             box-shadow: 0 8px 15px rgba(79, 70, 229, 0.3);
         }
 
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
+        .amount {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
         }
 
-        .error-section {
-            background: #fef2f2;
-            border: 1px solid #fecaca;
-            border-radius: 10px;
-            padding: 20px;
-            margin: 20px 0;
+        .positive {
+            color: #059669;
+        }
+
+        .negative {
+            color: #dc2626;
+        }
+
+        /* PDF 생성용 숨겨진 영역 */
+        .pdf-content {
+            display: none;
+            width: 210mm;
+            min-height: 297mm;
+            padding: 20mm;
+            background: white;
+            font-family: 'Malgun Gothic', Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .pdf-content.visible {
+            display: block;
+        }
+
+        .report-header {
             text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #4f46e5;
         }
 
-        .error-section h3 {
-            color: #991b1b;
+        .report-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1f2937;
             margin-bottom: 10px;
         }
 
-        .error-section p {
-            color: #7f1d1d;
-            line-height: 1.5;
+        .report-date {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .data-table th {
+            background: #f9fafb;
+            font-weight: bold;
+        }
+
+        .data-table td:last-child {
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .total-row {
+            background: #f3f4f6;
+            font-weight: bold;
+        }
+
+        .subsection {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .subsection-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #374151;
+            margin-bottom: 10px;
         }
     </style>
 </head>
@@ -261,12 +233,155 @@
             <div class="auto-section">
                 <h3>🚀 자동 PDF 생성</h3>
                 <p>URL 파라미터로 ROW ID가 전달되면 자동으로 PDF를 생성합니다</p>
-                <p><small>사용법: ?rowId=페이지ID</small></p>
+                <button class="btn" onclick="generateTestPDF()">📄 테스트 PDF 생성</button>
             </div>
 
             <div id="statusDiv"></div>
-            <div id="dataPreview"></div>
-            <div id="pdfPreview"></div>
+        </div>
+    </div>
+
+    <!-- PDF 생성용 숨겨진 콘텐츠 -->
+    <div id="pdfContent" class="pdf-content">
+        <div class="report-header">
+            <div class="report-title">2025-09월 자금현황 보고서</div>
+            <div class="report-date">생성일: 2025년 7월 10일</div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">📊 월간 요약</div>
+            <table class="data-table">
+                <tbody>
+                    <tr>
+                        <td>총 수입</td>
+                        <td>3,600,000원</td>
+                    </tr>
+                    <tr>
+                        <td>총 지출</td>
+                        <td>2,850,000원</td>
+                    </tr>
+                    <tr class="total-row">
+                        <td>잔여금</td>
+                        <td>750,000원</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <div class="section-title">📈 수입 현황</div>
+            <table class="data-table">
+                <tbody>
+                    <tr>
+                        <td>급여</td>
+                        <td>3,200,000원</td>
+                    </tr>
+                    <tr>
+                        <td>투자수익</td>
+                        <td>250,000원</td>
+                    </tr>
+                    <tr>
+                        <td>기타수익</td>
+                        <td>150,000원</td>
+                    </tr>
+                    <tr class="total-row">
+                        <td>총 수입</td>
+                        <td>3,600,000원</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <div class="section-title">📉 지출 현황</div>
+            
+            <div class="subsection">
+                <div class="subsection-title">【고정지출】</div>
+                <table class="data-table">
+                    <tbody>
+                        <tr>
+                            <td>대출상환</td>
+                            <td>300,000원</td>
+                        </tr>
+                        <tr>
+                            <td>보험료</td>
+                            <td>180,000원</td>
+                        </tr>
+                        <tr>
+                            <td>교통비</td>
+                            <td>120,000원</td>
+                        </tr>
+                        <tr>
+                            <td>통신비</td>
+                            <td>75,000원</td>
+                        </tr>
+                        <tr>
+                            <td>어머니생활비</td>
+                            <td>500,000원</td>
+                        </tr>
+                        <tr>
+                            <td>모임회비</td>
+                            <td>30,000원</td>
+                        </tr>
+                        <tr>
+                            <td>구독료</td>
+                            <td>45,000원</td>
+                        </tr>
+                        <tr>
+                            <td>적금</td>
+                            <td>800,000원</td>
+                        </tr>
+                        <tr>
+                            <td>기타</td>
+                            <td>50,000원</td>
+                        </tr>
+                        <tr class="total-row">
+                            <td>고정지출 소계</td>
+                            <td>2,100,000원</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="subsection">
+                <div class="subsection-title">【변동지출】</div>
+                <table class="data-table">
+                    <tbody>
+                        <tr>
+                            <td>변동지출 총액</td>
+                            <td>750,000원</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <table class="data-table">
+                <tbody>
+                    <tr class="total-row">
+                        <td>총 지출</td>
+                        <td>2,850,000원</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <div class="section-title">💰 자산 현황</div>
+            <table class="data-table">
+                <tbody>
+                    <tr>
+                        <td>현금</td>
+                        <td>5,200,000원</td>
+                    </tr>
+                    <tr>
+                        <td>적금</td>
+                        <td>12,500,000원</td>
+                    </tr>
+                    <tr class="total-row">
+                        <td>총 자산</td>
+                        <td>17,700,000원</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 
@@ -277,315 +392,68 @@
 
         window.onload = function() {
             if (rowId) {
-                showStatus('ROW ID가 감지되었습니다. 데이터를 불러오는 중...', 'info');
-                loadRowData(rowId);
+                showStatus('ROW ID가 감지되었습니다: ' + rowId, 'info');
+                setTimeout(() => {
+                    generatePDF();
+                }, 2000);
             } else {
-                showError();
+                showStatus('테스트 모드입니다. 버튼을 클릭해서 샘플 PDF를 생성해보세요.', 'info');
             }
         };
 
         function showStatus(message, type) {
             const statusDiv = document.getElementById('statusDiv');
-            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+            statusDiv.innerHTML = '<div class="status ' + type + '">' + message + '</div>';
         }
 
-        function showLoading(message) {
-            const statusDiv = document.getElementById('statusDiv');
-            statusDiv.innerHTML = `<div class="status info"><span class="loading"></span>${message}</div>`;
+        function generateTestPDF() {
+            generatePDF();
         }
 
-        function showError() {
-            const statusDiv = document.getElementById('statusDiv');
-            statusDiv.innerHTML = `
-                <div class="error-section">
-                    <h3>⚠️ ROW ID가 필요합니다</h3>
-                    <p>이 페이지는 Notion ROW에서 직접 호출되어야 합니다.</p>
-                    <p><strong>사용 방법:</strong></p>
-                    <p>1. Notion 데이터베이스의 "PDF Export" 컬럼에 다음 URL을 입력하세요:</p>
-                    <p><code>https://이주소.com?rowId=ROW_ID</code></p>
-                    <p>2. ROW_ID는 각 페이지의 고유 ID입니다.</p>
-                </div>
-            `;
-        }
-
-        async function loadRowData(rowId) {
-            showLoading('Notion에서 데이터를 불러오는 중...');
-
-            try {
-                // 실제 환경에서는 Notion API 호출
-                // 여기서는 샘플 데이터 사용
-                setTimeout(() => {
-                    const sampleData = generateSampleDataFromRowId(rowId);
-                    
-                    showDataPreview(sampleData);
-                    showPDFPreview(sampleData);
-                    showStatus('데이터를 성공적으로 불러왔습니다. PDF를 생성합니다.', 'success');
-                    
-                    // 2초 후 자동으로 PDF 생성
-                    setTimeout(() => {
-                        generatePDF(sampleData);
-                    }, 2000);
-                    
-                }, 1500);
-                
-            } catch (error) {
-                showStatus('데이터 로드 중 오류가 발생했습니다: ' + error.message, 'error');
-            }
-        }
-
-        function generateSampleDataFromRowId(rowId) {
-            // ROW ID를 기반으로 해당 월의 데이터 생성
-            // 실제로는 Notion API에서 해당 ROW 데이터를 가져옴
-            const monthData = {
-                '22c59afa-5ce0-810a-9ef5-eba23d52b156': '2025-09',
-                '22c59afa-5ce0-81f9-88ea-ecf47ac82574': '2025-08', 
-                '22c59afa-5ce0-8112-9153-c1ee7bc961af': '2025-07'
-            };
-
-            const month = monthData[rowId] || '2025-09';
+        function generatePDF() {
+            showStatus('PDF를 생성하는 중...', 'info');
             
-            return {
-                month: month,
-                rowId: rowId,
-                income: {
-                    salary: 3200000,
-                    investment: 250000,
-                    other: 150000,
-                    total: 3600000
-                },
-                fixedExpenses: {
-                    loan: 300000,
-                    insurance: 180000,
-                    transport: 120000,
-                    communication: 75000,
-                    motherLiving: 500000,
-                    meeting: 30000,
-                    subscription: 45000,
-                    savings: 800000,
-                    other: 50000,
-                    total: 2100000
-                },
-                variableExpenses: 750000,
-                totalExpenses: 2850000,
-                assets: {
-                    cash: 5200000,
-                    deposit: 12500000,
-                    total: 17700000
-                },
-                surplus: 750000
-            };
-        }
+            // PDF 콘텐츠 영역을 보이게 만들기
+            const pdfContent = document.getElementById('pdfContent');
+            pdfContent.classList.add('visible');
 
-        function showDataPreview(data) {
-            const previewDiv = document.getElementById('dataPreview');
-            previewDiv.innerHTML = `
-                <div class="summary-section">
-                    <h3>📋 데이터 확인 - ${data.month}</h3>
-                    <p><strong>ROW ID:</strong> ${data.rowId}</p>
-                    <table class="data-table">
-                        <tr><th>항목</th><th>금액</th></tr>
-                        <tr><td>총 수입</td><td class="amount positive">${formatCurrency(data.income.total)}</td></tr>
-                        <tr><td>총 지출</td><td class="amount negative">${formatCurrency(data.totalExpenses)}</td></tr>
-                        <tr><td>잔여금</td><td class="amount ${data.surplus >= 0 ? 'positive' : 'negative'}">${formatCurrency(data.surplus)}</td></tr>
-                    </table>
-                </div>
-            `;
-        }
-
-        function showPDFPreview(data) {
-            const previewDiv = document.getElementById('pdfPreview');
-            previewDiv.innerHTML = `
-                <div class="pdf-preview">
-                    <div class="report-header">
-                        <div class="report-title">${data.month} 월별 자금현황 보고서</div>
-                        <div class="report-date">생성일: ${new Date().toLocaleDateString('ko-KR')}</div>
-                    </div>
-
-                    <div class="summary-section">
-                        <div class="section-title">📊 월간 요약</div>
-                        <table class="data-table">
-                            <tr><td>총 수입</td><td class="amount positive">${formatCurrency(data.income.total)}</td></tr>
-                            <tr><td>총 지출</td><td class="amount negative">${formatCurrency(data.totalExpenses)}</td></tr>
-                            <tr class="total-row"><td>잔여금</td><td class="amount ${data.surplus >= 0 ? 'positive' : 'negative'}">${formatCurrency(data.surplus)}</td></tr>
-                        </table>
-                    </div>
-
-                    <div class="summary-section">
-                        <div class="section-title income">📈 수입 현황</div>
-                        <table class="data-table">
-                            <tr><td>급여</td><td class="amount">${formatCurrency(data.income.salary)}</td></tr>
-                            <tr><td>투자수익</td><td class="amount">${formatCurrency(data.income.investment)}</td></tr>
-                            <tr><td>기타수익</td><td class="amount">${formatCurrency(data.income.other)}</td></tr>
-                            <tr class="total-row"><td>총 수입</td><td class="amount positive">${formatCurrency(data.income.total)}</td></tr>
-                        </table>
-                    </div>
-
-                    <div class="summary-section">
-                        <div class="section-title expense">📉 지출 현황</div>
-                        <h4>【고정지출】</h4>
-                        <table class="data-table">
-                            <tr><td>대출상환</td><td class="amount">${formatCurrency(data.fixedExpenses.loan)}</td></tr>
-                            <tr><td>보험료</td><td class="amount">${formatCurrency(data.fixedExpenses.insurance)}</td></tr>
-                            <tr><td>교통비</td><td class="amount">${formatCurrency(data.fixedExpenses.transport)}</td></tr>
-                            <tr><td>통신비</td><td class="amount">${formatCurrency(data.fixedExpenses.communication)}</td></tr>
-                            <tr><td>어머니생활비</td><td class="amount">${formatCurrency(data.fixedExpenses.motherLiving)}</td></tr>
-                            <tr><td>모임회비</td><td class="amount">${formatCurrency(data.fixedExpenses.meeting)}</td></tr>
-                            <tr><td>구독료</td><td class="amount">${formatCurrency(data.fixedExpenses.subscription)}</td></tr>
-                            <tr><td>적금</td><td class="amount">${formatCurrency(data.fixedExpenses.savings)}</td></tr>
-                            <tr><td>기타</td><td class="amount">${formatCurrency(data.fixedExpenses.other)}</td></tr>
-                            <tr class="total-row"><td>고정지출 소계</td><td class="amount">${formatCurrency(data.fixedExpenses.total)}</td></tr>
-                        </table>
-
-                        <h4>【변동지출】</h4>
-                        <table class="data-table">
-                            <tr><td>변동지출 총액</td><td class="amount">${formatCurrency(data.variableExpenses)}</td></tr>
-                        </table>
-
-                        <table class="data-table">
-                            <tr class="total-row"><td>총 지출</td><td class="amount negative">${formatCurrency(data.totalExpenses)}</td></tr>
-                        </table>
-                    </div>
-
-                    <div class="summary-section">
-                        <div class="section-title asset">💰 자산 현황</div>
-                        <table class="data-table">
-                            <tr><td>현금</td><td class="amount">${formatCurrency(data.assets.cash)}</td></tr>
-                            <tr><td>적금</td><td class="amount">${formatCurrency(data.assets.deposit)}</td></tr>
-                            <tr class="total-row"><td>총 자산</td><td class="amount">${formatCurrency(data.assets.total)}</td></tr>
-                        </table>
-                    </div>
-
-                    <div style="text-align: center; margin-top: 30px;">
-                        <button class="btn" onclick="generatePDF(currentData)">📄 PDF 다시 다운로드</button>
-                    </div>
-                </div>
-            `;
-        }
-
-        function formatCurrency(amount) {
-            return new Intl.NumberFormat('ko-KR', {
-                style: 'currency',
-                currency: 'KRW'
-            }).format(amount);
-        }
-
-        let currentData = null;
-
-        function generatePDF(data) {
-            if (!data) {
-                showStatus('데이터가 없습니다.', 'error');
-                return;
-            }
-
-            currentData = data;
-            showLoading('PDF를 생성하는 중...');
-
-            try {
+            // html2canvas를 사용해서 HTML을 이미지로 변환 후 PDF 생성
+            html2canvas(pdfContent, {
+                scale: 2,
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: '#ffffff',
+                width: 794, // A4 width at 96 DPI
+                height: 1123 // A4 height at 96 DPI
+            }).then(canvas => {
                 const { jsPDF } = window.jspdf;
-                const doc = new jsPDF({
-                    orientation: 'portrait',
-                    unit: 'mm',
-                    format: 'a4'
-                });
-
-                // 제목
-                doc.setFontSize(18);
-                doc.text(`${data.month} 월별 자금현황 보고서`, 20, 25);
+                const pdf = new jsPDF('p', 'mm', 'a4');
                 
-                doc.setFontSize(10);
-                doc.text(`생성일: ${new Date().toLocaleDateString('ko-KR')}`, 20, 35);
-
-                let y = 50;
-
-                // 월간 요약
-                doc.setFontSize(14);
-                doc.text('월간 요약', 20, y);
-                y += 8;
+                const imgData = canvas.toDataURL('image/png');
+                const imgWidth = 210; // A4 width in mm
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
                 
-                doc.setFontSize(11);
-                doc.text(`총 수입: ${formatCurrency(data.income.total)}`, 25, y);
-                y += 6;
-                doc.text(`총 지출: ${formatCurrency(data.totalExpenses)}`, 25, y);
-                y += 6;
-                doc.text(`잔여금: ${formatCurrency(data.surplus)}`, 25, y);
-                y += 12;
-
-                // 수입 현황
-                doc.setFontSize(14);
-                doc.text('수입 현황', 20, y);
-                y += 8;
+                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
                 
-                doc.setFontSize(11);
-                doc.text(`급여: ${formatCurrency(data.income.salary)}`, 25, y);
-                y += 5;
-                doc.text(`투자수익: ${formatCurrency(data.income.investment)}`, 25, y);
-                y += 5;
-                doc.text(`기타수익: ${formatCurrency(data.income.other)}`, 25, y);
-                y += 5;
-                doc.text(`총 수입: ${formatCurrency(data.income.total)}`, 25, y);
-                y += 12;
-
-                // 지출 현황
-                doc.setFontSize(14);
-                doc.text('지출 현황', 20, y);
-                y += 8;
+                // 현재 날짜로 파일명 생성
+                const today = new Date();
+                const dateStr = today.getFullYear() + '-' + 
+                              String(today.getMonth() + 1).padStart(2, '0');
                 
-                doc.setFontSize(12);
-                doc.text('고정지출', 25, y);
-                y += 6;
+                pdf.save('월별자금현황_' + dateStr + '.pdf');
                 
-                doc.setFontSize(10);
-                const expenses = data.fixedExpenses;
-                doc.text(`대출상환: ${formatCurrency(expenses.loan)}`, 30, y);
-                y += 4;
-                doc.text(`보험료: ${formatCurrency(expenses.insurance)}`, 30, y);
-                y += 4;
-                doc.text(`교통비: ${formatCurrency(expenses.transport)}`, 30, y);
-                y += 4;
-                doc.text(`통신비: ${formatCurrency(expenses.communication)}`, 30, y);
-                y += 4;
-                doc.text(`어머니생활비: ${formatCurrency(expenses.motherLiving)}`, 30, y);
-                y += 4;
-                doc.text(`모임회비: ${formatCurrency(expenses.meeting)}`, 30, y);
-                y += 4;
-                doc.text(`구독료: ${formatCurrency(expenses.subscription)}`, 30, y);
-                y += 4;
-                doc.text(`적금: ${formatCurrency(expenses.savings)}`, 30, y);
-                y += 4;
-                doc.text(`기타: ${formatCurrency(expenses.other)}`, 30, y);
-                y += 5;
-                doc.text(`고정지출 소계: ${formatCurrency(expenses.total)}`, 30, y);
-                y += 8;
-
-                doc.setFontSize(12);
-                doc.text('변동지출', 25, y);
-                y += 6;
+                // PDF 콘텐츠 영역 다시 숨기기
+                pdfContent.classList.remove('visible');
                 
-                doc.setFontSize(10);
-                doc.text(`변동지출 총액: ${formatCurrency(data.variableExpenses)}`, 30, y);
-                y += 6;
-                doc.text(`총 지출: ${formatCurrency(data.totalExpenses)}`, 30, y);
-                y += 12;
-
-                // 자산 현황
-                doc.setFontSize(14);
-                doc.text('자산 현황', 20, y);
-                y += 8;
-                
-                doc.setFontSize(11);
-                doc.text(`현금: ${formatCurrency(data.assets.cash)}`, 25, y);
-                y += 5;
-                doc.text(`적금: ${formatCurrency(data.assets.deposit)}`, 25, y);
-                y += 5;
-                doc.text(`총 자산: ${formatCurrency(data.assets.total)}`, 25, y);
-
-                // PDF 다운로드
-                doc.save(`월별자금현황_${data.month}.pdf`);
-                
-                showStatus('PDF가 성공적으로 생성되었습니다! 다운로드를 확인하세요.', 'success');
-            } catch (error) {
+                showStatus('PDF가 성공적으로 생성되었습니다!', 'success');
+            }).catch(error => {
+                console.error('Error generating PDF:', error);
                 showStatus('PDF 생성 중 오류가 발생했습니다: ' + error.message, 'error');
-            }
+                
+                // PDF 콘텐츠 영역 다시 숨기기
+                const pdfContent = document.getElementById('pdfContent');
+                pdfContent.classList.remove('visible');
+            });
         }
     </script>
 </body>
