@@ -231,34 +231,49 @@
             <div class="url-section">
                 <h3>🔗 URL 파라미터 사용법</h3>
                 
-                <h4>💡 새로운 방식 (JSON 데이터 - 권장)</h4>
-                <p>구조화된 JSON 데이터를 사용하여 더 체계적으로 데이터를 전송:</p>
+                <h4>💡 새로운 방식 (PREFIX 기반 - 권장)</h4>
+                <p>PREFIX를 사용하여 동적으로 확장 가능한 데이터 전송:</p>
                 <div class="url-example">
-https://your-site.com/?data={"rowId":"123","targetMonth":"2025-09","income":{"total":3600000,"salary":3200000,"investment":250000,"other":150000},"expense":{"fixed":{"total":2100000,"transportation":120000,"subscription":45000,"loan":300000,"insurance":180000,"family":500000,"savings":800000,"communication":75000,"other":50000},"variable":750000},"assets":[{"name":"현금","value":5200000,"type":"liquid"},{"name":"적금","value":12500000,"type":"savings"},{"name":"주식","value":3000000,"type":"investment"}]}
+https://your-site.com/?rowId=123&target_month=2025-09&income_급여=3200000&income_투자수익=250000&income_기타수입=150000&expense_fixed_대출상환=300000&expense_fixed_보험료=180000&expense_fixed_교통비=120000&expense_variable_식비=300000&expense_variable_쇼핑=200000&asset_현금=5200000&asset_적금=12500000&asset_주식=3000000
                 </div>
                 
-                <h4>🔄 기존 방식 (개별 파라미터 - 하위 호환성)</h4>
-                <div class="url-example">
-https://your-site.com/?rowId=123&income_total=3600000&income_salary=3200000&income_investment=250000&income_other=150000&expense_fixed_total=2100000&expense_transportation=120000&expense_subscription=45000&expense_loan=300000&expense_insurance=180000&expense_family=500000&expense_savings=800000&expense_communication=75000&expense_other_fixed=50000&expense_variable=750000&asset_cash=5200000&asset_savings=12500000&target_month=2025-09
-                </div>
-                
-                <h4>📋 JSON 데이터 구조:</h4>
+                <h4>📋 PREFIX 규칙:</h4>
                 <div class="data-grid">
                     <div class="data-item">
-                        <strong>기본 정보</strong>
-                        rowId, targetMonth
+                        <strong>수입내역</strong>
+                        income_항목명=금액
                     </div>
                     <div class="data-item">
-                        <strong>수입 (income)</strong>
-                        total, salary, investment, other
+                        <strong>고정지출내역</strong>
+                        expense_fixed_항목명=금액
                     </div>
                     <div class="data-item">
-                        <strong>고정지출 (expense.fixed)</strong>
-                        total, transportation, subscription, loan, insurance, family, savings, communication, other
+                        <strong>변동지출내역</strong>
+                        expense_variable_항목명=금액
                     </div>
                     <div class="data-item">
-                        <strong>변동지출 & 자산 배열</strong>
-                        expense.variable, assets[{name, value, type}]
+                        <strong>보유자산내역</strong>
+                        asset_항목명=금액
+                    </div>
+                </div>
+                
+                <h4>🔄 장점:</h4>
+                <div class="data-grid">
+                    <div class="data-item">
+                        <strong>🚀 확장성</strong>
+                        항목 추가 시 코드 수정 불필요
+                    </div>
+                    <div class="data-item">
+                        <strong>📝 직관성</strong>
+                        항목명이 그대로 보고서에 표시
+                    </div>
+                    <div class="data-item">
+                        <strong>🔧 유연성</strong>
+                        노션에서 컬럼 추가만으로 자동 반영
+                    </div>
+                    <div class="data-item">
+                        <strong>📊 동적</strong>
+                        리스트 형태로 모든 항목 자동 렌더링
                     </div>
                 </div>
             </div>
@@ -302,46 +317,72 @@ https://your-site.com/?rowId=123&income_total=3600000&income_salary=3200000&inco
         function parseURLData() {
             let data = {};
             
-            // JSON 데이터 파라미터 체크 (새로운 방식)
-            const jsonData = urlParams.get('data');
-            if (jsonData) {
-                try {
-                    data = JSON.parse(decodeURIComponent(jsonData));
-                    console.log('JSON 데이터 파싱 성공:', data);
-                } catch (error) {
-                    console.error('JSON 파싱 오류:', error);
-                    showStatus('JSON 데이터 파싱 중 오류가 발생했습니다: ' + error.message, 'error');
-                }
-            } else {
-                // 기존 방식 (개별 파라미터) - 하위 호환성
-                for (const [key, value] of urlParams.entries()) {
-                    if (key.startsWith('income_') || key.startsWith('expense_') || key.startsWith('asset_') || 
-                        key === 'rowId' || key === 'target_month') {
-                        
-                        // 숫자 값은 정수로 변환
-                        if (key !== 'rowId' && key !== 'target_month' && !isNaN(value)) {
-                            data[key] = parseInt(value);
-                        } else {
-                            data[key] = value;
-                        }
-                    }
+            // PREFIX 기반 동적 파싱 (새로운 방식)
+            const parsedData = {
+                rowId: urlParams.get('rowId') || 'URL에서 전달받음',
+                targetMonth: urlParams.get('target_month') || new Date().toISOString().slice(0, 7),
+                income: {},
+                expenseFixed: {},
+                expenseVariable: {},
+                assets: {}
+            };
+            
+            // 모든 URL 파라미터를 PREFIX로 분류
+            for (const [key, value] of urlParams.entries()) {
+                const numValue = !isNaN(value) ? parseInt(value) : value;
+                
+                if (key.startsWith('income_')) {
+                    const name = key.replace('income_', '');
+                    parsedData.income[name] = numValue;
+                } else if (key.startsWith('expense_fixed_')) {
+                    const name = key.replace('expense_fixed_', '');
+                    parsedData.expenseFixed[name] = numValue;
+                } else if (key.startsWith('expense_variable_')) {
+                    const name = key.replace('expense_variable_', '');
+                    parsedData.expenseVariable[name] = numValue;
+                } else if (key.startsWith('asset_')) {
+                    const name = key.replace('asset_', '');
+                    parsedData.assets[name] = numValue;
                 }
             }
             
-            window.urlData = data;
+            window.urlData = parsedData;
             
-            // 데이터 미리보기 표시
-            if (Object.keys(data).length > 0) {
+            // 데이터 미리보기 표시 (PREFIX 기반)
+            const hasData = Object.keys(parsedData.income).length > 0 || 
+                           Object.keys(parsedData.expenseFixed).length > 0 || 
+                           Object.keys(parsedData.expenseVariable).length > 0 || 
+                           Object.keys(parsedData.assets).length > 0;
+                           
+            if (hasData) {
                 const previewDiv = document.getElementById('dataPreviewDiv');
                 previewDiv.innerHTML = `
                     <h4>📋 URL에서 읽어온 데이터:</h4>
                     <div class="data-grid">
-                        ${Object.entries(data).map(([key, value]) => `
-                            <div class="data-item">
-                                <strong>${key}</strong>
-                                <div class="data-value">${typeof value === 'number' ? value.toLocaleString() : value}</div>
-                            </div>
-                        `).join('')}
+                        <div class="data-item">
+                            <strong>기본 정보</strong>
+                            <div class="data-value">ID: ${parsedData.rowId}<br>대상월: ${parsedData.targetMonth}</div>
+                        </div>
+                        ${Object.keys(parsedData.income).length > 0 ? `
+                        <div class="data-item">
+                            <strong>수입내역</strong>
+                            <div class="data-value">${Object.entries(parsedData.income).map(([k,v]) => `${k}: ${v.toLocaleString()}원`).join('<br>')}</div>
+                        </div>` : ''}
+                        ${Object.keys(parsedData.expenseFixed).length > 0 ? `
+                        <div class="data-item">
+                            <strong>고정지출내역</strong>
+                            <div class="data-value">${Object.entries(parsedData.expenseFixed).map(([k,v]) => `${k}: ${v.toLocaleString()}원`).join('<br>')}</div>
+                        </div>` : ''}
+                        ${Object.keys(parsedData.expenseVariable).length > 0 ? `
+                        <div class="data-item">
+                            <strong>변동지출내역</strong>
+                            <div class="data-value">${Object.entries(parsedData.expenseVariable).map(([k,v]) => `${k}: ${v.toLocaleString()}원`).join('<br>')}</div>
+                        </div>` : ''}
+                        ${Object.keys(parsedData.assets).length > 0 ? `
+                        <div class="data-item">
+                            <strong>보유자산내역</strong>
+                            <div class="data-value">${Object.entries(parsedData.assets).map(([k,v]) => `${k}: ${v.toLocaleString()}원`).join('<br>')}</div>
+                        </div>` : ''}
                     </div>
                 `;
             }
@@ -366,77 +407,22 @@ https://your-site.com/?rowId=123&income_total=3600000&income_salary=3200000&inco
                 const date = String(today.getDate()).padStart(2, '0');
                 const dateStr = `${year}년 ${month}월 ${date}일`;
                 
-                // 데이터 형식 감지 및 값 추출
-                let rowId, targetMonth, totalIncome, salaryIncome, investmentIncome, otherIncome;
-                let totalFixedExpense, variableExpense, totalExpense;
-                let transportation, subscription, loanPayment, insurance, familySupport, savings, communication, otherFixed;
-                let cashAsset, savingsAsset, totalAsset;
+                // PREFIX 기반 데이터 추출
+                const rowId = data.rowId || 'PREFIX에서 전달받음';
+                const targetMonth = data.targetMonth || `${year}-${month}`;
                 
-                if (data.income && typeof data.income === 'object') {
-                    // 새로운 JSON 형식
-                    rowId = data.rowId || 'JSON에서 전달받음';
-                    targetMonth = data.targetMonth || `${year}-${month}`;
-                    
-                    // 수입 데이터
-                    totalIncome = data.income?.total || 0;
-                    salaryIncome = data.income?.salary || 0;
-                    investmentIncome = data.income?.investment || 0;
-                    otherIncome = data.income?.other || 0;
-
-                    // 지출 데이터
-                    totalFixedExpense = data.expense?.fixed?.total || 0;
-                    variableExpense = data.expense?.variable || 0;
-                    totalExpense = totalFixedExpense + variableExpense;
-
-                    // 고정지출 세부 항목
-                    transportation = data.expense?.fixed?.transportation || 0;
-                    subscription = data.expense?.fixed?.subscription || 0;
-                    loanPayment = data.expense?.fixed?.loan || 0;
-                    insurance = data.expense?.fixed?.insurance || 0;
-                    familySupport = data.expense?.fixed?.family || 0;
-                    savings = data.expense?.fixed?.savings || 0;
-                    communication = data.expense?.fixed?.communication || 0;
-                    otherFixed = data.expense?.fixed?.other || 0;
-
-                    // 자산 데이터 (배열 구조)
-                    const assets = data.assets || [];
-                    totalAsset = assets.reduce((sum, asset) => sum + (asset.value || 0), 0);
-                    
-                    // 기존 호환성을 위한 개별 자산 추출
-                    cashAsset = assets.find(a => a.name === '현금')?.value || 0;
-                    savingsAsset = assets.find(a => a.name === '적금')?.value || 0;
-                } else {
-                    // 기존 형식 (하위 호환성)
-                    rowId = data.rowId || 'URL에서 전달받음';
-                    targetMonth = data.target_month || `${year}-${month}`;
-                    
-                    // 수입 데이터
-                    totalIncome = data.income_total || 0;
-                    salaryIncome = data.income_salary || 0;
-                    investmentIncome = data.income_investment || 0;
-                    otherIncome = data.income_other || 0;
-
-                    // 지출 데이터
-                    totalFixedExpense = data.expense_fixed_total || 0;
-                    variableExpense = data.expense_variable || 0;
-                    totalExpense = totalFixedExpense + variableExpense;
-
-                    // 고정지출 세부 항목
-                    transportation = data.expense_transportation || 0;
-                    subscription = data.expense_subscription || 0;
-                    loanPayment = data.expense_loan || 0;
-                    insurance = data.expense_insurance || 0;
-                    familySupport = data.expense_family || 0;
-                    savings = data.expense_savings || 0;
-                    communication = data.expense_communication || 0;
-                    otherFixed = data.expense_other_fixed || 0;
-
-                    // 자산 데이터
-                    cashAsset = data.asset_cash || 0;
-                    savingsAsset = data.asset_savings || 0;
-                    totalAsset = cashAsset + savingsAsset;
-                }
-
+                // 동적 계산
+                const incomeEntries = Object.entries(data.income || {});
+                const expenseFixedEntries = Object.entries(data.expenseFixed || {});
+                const expenseVariableEntries = Object.entries(data.expenseVariable || {});
+                const assetEntries = Object.entries(data.assets || {});
+                
+                const totalIncome = incomeEntries.reduce((sum, [key, value]) => sum + value, 0);
+                const totalFixedExpense = expenseFixedEntries.reduce((sum, [key, value]) => sum + value, 0);
+                const totalVariableExpense = expenseVariableEntries.reduce((sum, [key, value]) => sum + value, 0);
+                const totalExpense = totalFixedExpense + totalVariableExpense;
+                const totalAsset = assetEntries.reduce((sum, [key, value]) => sum + value, 0);
+                
                 // 수지 계산
                 const balance = totalIncome - totalExpense;
                 const savingsRate = totalIncome > 0 ? ((balance / totalIncome) * 100).toFixed(1) : 0;
@@ -447,17 +433,18 @@ https://your-site.com/?rowId=123&income_total=3600000&income_salary=3200000&inco
                     new Date(targetMonth + '-01').toLocaleDateString('ko-KR', {year: 'numeric', month: 'long'}) :
                     `${year}년 ${month}월`;
 
-                // 자산 목록 동적 생성
-                const assets = data.assets || [];
-                let assetListText = '';
-                if (assets.length > 0) {
-                    assetListText = assets.map((asset, index) => 
-                        `   ${index + 1}. ${asset.name}${' '.repeat(Math.max(1, 20 - asset.name.length))}${asset.value.toLocaleString()}원`
+                // 동적 리스트 생성 함수
+                function generateListText(entries, startIndex = 1) {
+                    return entries.map(([name, value], index) => 
+                        `   ${startIndex + index}. ${name}${' '.repeat(Math.max(1, 20 - name.length))}${value.toLocaleString()}원`
                     ).join('\n');
-                } else {
-                    // 기존 방식 폴백
-                    assetListText = `   1. 현금${' '.repeat(17)}${cashAsset.toLocaleString()}원\n   2. 예적금${' '.repeat(15)}${savingsAsset.toLocaleString()}원`;
                 }
+
+                // 각 섹션 리스트 생성
+                const incomeListText = incomeEntries.length > 0 ? generateListText(incomeEntries) : '   데이터 없음';
+                const expenseFixedListText = expenseFixedEntries.length > 0 ? generateListText(expenseFixedEntries) : '   데이터 없음';
+                const expenseVariableListText = expenseVariableEntries.length > 0 ? generateListText(expenseVariableEntries) : '   데이터 없음';
+                const assetListText = assetEntries.length > 0 ? generateListText(assetEntries) : '   데이터 없음';
 
                 // 보고서 텍스트 생성
                 const reportText = `
@@ -483,9 +470,7 @@ https://your-site.com/?rowId=123&income_total=3600000&income_salary=3200000&inco
                             💵 수입 현황
 ═══════════════════════════════════════════════════════════════
 
-1. 급여소득                   ${salaryIncome.toLocaleString()}원
-2. 투자수익                   ${investmentIncome.toLocaleString()}원
-3. 기타수입                   ${otherIncome.toLocaleString()}원
+${incomeListText}
    ─────────────────────────────────────
    💰 총 수입                 ${totalIncome.toLocaleString()}원
 
@@ -494,21 +479,14 @@ https://your-site.com/?rowId=123&income_total=3600000&income_salary=3200000&inco
 ═══════════════════════════════════════════════════════════════
 
 🔸 고정지출
-   1. 대출상환                   ${loanPayment.toLocaleString()}원
-   2. 보험료                     ${insurance.toLocaleString()}원
-   3. 교통비                     ${transportation.toLocaleString()}원
-   4. 통신비                     ${communication.toLocaleString()}원
-   5. 가족 생활비                ${familySupport.toLocaleString()}원
-   6. 구독료                     ${subscription.toLocaleString()}원
-   7. 적금                       ${savings.toLocaleString()}원
-   8. 기타                       ${otherFixed.toLocaleString()}원
+${expenseFixedListText}
    ─────────────────────────────────────
    소계 (고정지출)             ${totalFixedExpense.toLocaleString()}원
 
 🔸 변동지출
-   1. 변동지출 합계              ${variableExpense.toLocaleString()}원
+${expenseVariableListText}
    ─────────────────────────────────────
-   소계 (변동지출)             ${variableExpense.toLocaleString()}원
+   소계 (변동지출)             ${totalVariableExpense.toLocaleString()}원
 
    ─────────────────────────────────────
    💸 총 지출                 ${totalExpense.toLocaleString()}원
@@ -569,36 +547,39 @@ ${balance > 0 ? '✅' : '⚠️'} 저축률: ${savingsRate}% ${parseFloat(saving
         }
 
         function generateTestReport() {
-            // 테스트 데이터로 보고서 생성 (새로운 JSON 형식)
+            // 테스트 데이터로 보고서 생성 (PREFIX 방식)
             const testData = {
-                rowId: 'TEST_DATA_JSON',
+                rowId: 'TEST_DATA_PREFIX',
                 targetMonth: '2025-07',
                 income: {
-                    total: 3600000,
-                    salary: 3200000,
-                    investment: 250000,
-                    other: 150000
+                    '급여': 3200000,
+                    '투자수익': 250000,
+                    '기타수입': 150000,
+                    '부업': 100000
                 },
-                expense: {
-                    fixed: {
-                        total: 2100000,
-                        transportation: 120000,
-                        subscription: 45000,
-                        loan: 300000,
-                        insurance: 180000,
-                        family: 500000,
-                        savings: 800000,
-                        communication: 75000,
-                        other: 80000
-                    },
-                    variable: 750000
+                expenseFixed: {
+                    '대출상환': 300000,
+                    '보험료': 180000,
+                    '교통비': 120000,
+                    '통신비': 75000,
+                    '어머니생활비': 500000,
+                    '구독료': 45000,
+                    '적금': 800000,
+                    '기타': 80000
                 },
-                assets: [
-                    {name: "현금", value: 5200000, type: "liquid"},
-                    {name: "적금", value: 12500000, type: "savings"},
-                    {name: "주식", value: 3000000, type: "investment"},
-                    {name: "부동산", value: 200000000, type: "property"}
-                ]
+                expenseVariable: {
+                    '식비': 300000,
+                    '쇼핑': 200000,
+                    '엔터테인먼트': 150000,
+                    '기타변동': 100000
+                },
+                assets: {
+                    '현금': 5200000,
+                    '적금': 12500000,
+                    '주식': 3000000,
+                    '부동산': 200000000,
+                    '암호화폐': 1000000
+                }
             };
             
             window.urlData = testData;
