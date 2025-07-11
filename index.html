@@ -620,35 +620,34 @@ ${assetListText}
                 
                 // 모바일 친화적 크기 설정 (세로로 긴 형태)
                 canvas.width = 800;
-                canvas.height = 1200;
+                canvas.height = 1400;
                 
-                // 배경색 설정
-                const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-                gradient.addColorStop(0, '#667eea');
-                gradient.addColorStop(1, '#764ba2');
-                ctx.fillStyle = gradient;
+                // 배경색 설정 (흰색)
+                ctx.fillStyle = '#ffffff';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 
                 // 폰트 설정
                 ctx.textAlign = 'center';
-                ctx.fillStyle = 'white';
+                ctx.fillStyle = '#2d3748';
                 
-                let y = 60;
-                const leftMargin = 50;
-                const rightMargin = canvas.width - 50;
+                let y = 80;
+                const leftMargin = 60;
+                const rightMargin = canvas.width - 60;
                 const centerX = canvas.width / 2;
                 
                 // 제목
-                ctx.font = 'bold 32px Arial';
+                ctx.font = 'bold 36px Arial';
+                ctx.fillStyle = '#1a365d';
                 ctx.fillText('💰 월별 자금현황 보고서', centerX, y);
-                y += 40;
+                y += 60;
                 
                 // 대상월
-                ctx.font = '20px Arial';
+                ctx.font = '22px Arial';
+                ctx.fillStyle = '#2d3748';
                 const targetMonth = data.targetMonth || new Date().toISOString().slice(0, 7);
                 const targetMonthFormatted = new Date(targetMonth + '-01').toLocaleDateString('ko-KR', {year: 'numeric', month: 'long'});
                 ctx.fillText(`📅 ${targetMonthFormatted}`, centerX, y);
-                y += 60;
+                y += 80;
                 
                 // 동적 계산
                 const incomeEntries = Object.entries(data.income || {});
@@ -664,49 +663,61 @@ ${assetListText}
                 const balance = totalIncome - totalExpense;
                 
                 // 요약 박스 배경
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-                ctx.fillRect(leftMargin, y - 30, rightMargin - leftMargin, 120);
+                ctx.fillStyle = '#f7fafc';
+                ctx.strokeStyle = '#e2e8f0';
+                ctx.lineWidth = 2;
+                const summaryBoxHeight = 160;
+                ctx.fillRect(leftMargin, y - 40, rightMargin - leftMargin, summaryBoxHeight);
+                ctx.strokeRect(leftMargin, y - 40, rightMargin - leftMargin, summaryBoxHeight);
                 
-                ctx.fillStyle = 'white';
-                ctx.font = 'bold 24px Arial';
+                ctx.fillStyle = '#2b6cb0';
+                ctx.font = 'bold 26px Arial';
                 ctx.fillText('📊 월간 요약', centerX, y);
-                y += 40;
-                
-                ctx.font = '18px Arial';
-                ctx.fillText(`💰 총 수입: ${totalIncome.toLocaleString()}원`, centerX, y);
-                y += 30;
-                ctx.fillText(`💸 총 지출: ${totalExpense.toLocaleString()}원`, centerX, y);
-                y += 30;
-                ctx.fillText(`📈 수지차액: ${balance.toLocaleString()}원`, centerX, y);
                 y += 50;
+                
+                ctx.fillStyle = '#2d3748';
+                ctx.font = '20px Arial';
+                ctx.fillText(`💰 총 수입: ${totalIncome.toLocaleString()}원`, centerX, y);
+                y += 35;
+                ctx.fillText(`💸 총 지출: ${totalExpense.toLocaleString()}원`, centerX, y);
+                y += 35;
+                ctx.fillText(`📈 수지차액: ${balance.toLocaleString()}원`, centerX, y);
+                y += 70;
                 
                 // 섹션별 상세 내역 그리기 함수
                 function drawSection(title, entries, startY) {
                     let currentY = startY;
                     
                     // 섹션 배경
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
-                    const sectionHeight = 40 + (entries.length * 25) + 20;
-                    ctx.fillRect(leftMargin, currentY - 25, rightMargin - leftMargin, sectionHeight);
+                    ctx.fillStyle = '#f8f9fa';
+                    ctx.strokeStyle = '#dee2e6';
+                    ctx.lineWidth = 1;
+                    const sectionHeight = 60 + (entries.length * 35) + 40;
+                    ctx.fillRect(leftMargin, currentY - 30, rightMargin - leftMargin, sectionHeight);
+                    ctx.strokeRect(leftMargin, currentY - 30, rightMargin - leftMargin, sectionHeight);
                     
-                    ctx.fillStyle = 'white';
-                    ctx.font = 'bold 20px Arial';
+                    // 제목
+                    ctx.fillStyle = '#2b6cb0';
+                    ctx.font = 'bold 22px Arial';
                     ctx.fillText(title, centerX, currentY);
-                    currentY += 35;
+                    currentY += 50;
                     
-                    ctx.font = '16px Arial';
+                    // 항목들
+                    ctx.font = '18px Arial';
                     ctx.textAlign = 'left';
                     
                     entries.forEach(([name, value]) => {
-                        ctx.fillText(`• ${name}`, leftMargin + 20, currentY);
+                        ctx.fillStyle = '#4a5568';
+                        ctx.fillText(`• ${name}`, leftMargin + 30, currentY);
                         ctx.textAlign = 'right';
-                        ctx.fillText(`${value.toLocaleString()}원`, rightMargin - 20, currentY);
+                        ctx.fillStyle = '#2d3748';
+                        ctx.fillText(`${value.toLocaleString()}원`, rightMargin - 30, currentY);
                         ctx.textAlign = 'left';
-                        currentY += 25;
+                        currentY += 35;
                     });
                     
                     ctx.textAlign = 'center';
-                    return currentY + 20;
+                    return currentY + 50;
                 }
                 
                 // 수입 섹션
@@ -730,13 +741,13 @@ ${assetListText}
                 }
                 
                 // 하단 정보
-                y = Math.max(y, canvas.height - 100);
-                ctx.font = '14px Arial';
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                y = Math.max(y, canvas.height - 120);
+                ctx.font = '16px Arial';
+                ctx.fillStyle = '#718096';
                 const today = new Date();
                 const dateStr = today.toLocaleDateString('ko-KR');
                 ctx.fillText(`생성일: ${dateStr}`, centerX, y);
-                y += 20;
+                y += 30;
                 ctx.fillText('🤖 자동 생성된 보고서', centerX, y);
                 
                 // PNG 다운로드
