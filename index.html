@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>URL 데이터 기반 월별 자금현황 보고서</title>
+    <title>월별 자금현황 보고서</title>
     <style>
         * {
             margin: 0;
@@ -192,6 +192,16 @@
             box-shadow: 0 8px 15px rgba(245, 158, 11, 0.3);
         }
 
+        .png-btn {
+            background: #8b5cf6;
+            font-size: 0.9em;
+            padding: 8px 16px;
+        }
+
+        .png-btn:hover {
+            box-shadow: 0 8px 15px rgba(139, 92, 246, 0.3);
+        }
+
         .data-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -228,7 +238,7 @@
         </div>
 
         <div class="main-content">
-            <div class="url-section">
+            <!-- <div class="url-section">
                 <h3>🔗 URL 파라미터 사용법</h3>
                 
                 <h4>💡 새로운 방식 (PREFIX 기반 - 권장)</h4>
@@ -256,27 +266,7 @@ https://your-site.com/?rowId=123&target_month=2025-09&income_급여=3200000&inco
                         asset_항목명=금액
                     </div>
                 </div>
-                
-                <h4>🔄 장점:</h4>
-                <div class="data-grid">
-                    <div class="data-item">
-                        <strong>🚀 확장성</strong>
-                        항목 추가 시 코드 수정 불필요
-                    </div>
-                    <div class="data-item">
-                        <strong>📝 직관성</strong>
-                        항목명이 그대로 보고서에 표시
-                    </div>
-                    <div class="data-item">
-                        <strong>🔧 유연성</strong>
-                        노션에서 컬럼 추가만으로 자동 반영
-                    </div>
-                    <div class="data-item">
-                        <strong>📊 동적</strong>
-                        리스트 형태로 모든 항목 자동 렌더링
-                    </div>
-                </div>
-            </div>
+            </div> -->
 
             <div class="auto-section">
                 <h3>📊 보고서 생성</h3>
@@ -284,6 +274,7 @@ https://your-site.com/?rowId=123&target_month=2025-09&income_급여=3200000&inco
                 <button class="btn" onclick="generateReportFromURL()" id="generateBtn">📄 URL 데이터로 보고서 생성</button>
                 <button class="btn copy-btn" onclick="copyReport()" id="copyBtn" style="display:none;">📋 텍스트 복사</button>
                 <button class="btn download-btn" onclick="downloadReport()" id="downloadBtn" style="display:none;">💾 TXT 파일 다운로드</button>
+                <button class="btn png-btn" onclick="generatePNGReport()" id="pngBtn" style="display:none;">🖼️ PNG 이미지 다운로드</button>
             </div>
 
             <div id="statusDiv"></div>
@@ -464,7 +455,6 @@ https://your-site.com/?rowId=123&target_month=2025-09&income_급여=3200000&inco
 💸 이번 달 총 지출:        ${totalExpense.toLocaleString()}원
 📈 이번 달 수지차액:        ${balance.toLocaleString()}원
 📊 지출율:                     ${expenseRate}%
-📊 저축율:                     ${savingsRate}%
 
 ═══════════════════════════════════════════════════════════════
                             💵 수입 현황
@@ -501,24 +491,6 @@ ${assetListText}
    💎 총 자산                ${totalAsset.toLocaleString()}원
 
 ═══════════════════════════════════════════════════════════════
-                            📈 분석 및 코멘트
-═══════════════════════════════════════════════════════════════
-
-✅ 수입 대비 지출 비율: ${expenseRate}% ${parseFloat(expenseRate) < 80 ? '(양호)' : parseFloat(expenseRate) < 90 ? '(보통)' : '(주의)'}
-${balance > 0 ? '✅' : '⚠️'} 저축률: ${savingsRate}% ${parseFloat(savingsRate) > 20 ? '(우수)' : parseFloat(savingsRate) > 10 ? '(양호)' : '(개선 필요)'}
-📊 고정지출 비중: ${totalIncome > 0 ? ((totalFixedExpense / totalIncome) * 100).toFixed(1) : 0}%
-
-📝 이번 달 특이사항:
-   - URL 파라미터를 통해 실시간으로 데이터를 받아왔습니다
-   - 총 자산: ${totalAsset.toLocaleString()}원
-   ${balance > 0 ? '- 흑자 달성!' : '- 적자 발생, 지출 관리 필요'}
-
-📋 다음 달 계획:
-   - 지속적인 가계부 관리
-   - 데이터 연동 시스템 활용
-   ${parseFloat(expenseRate) > 85 ? '- 지출 절약 계획 수립' : '- 현재 수준 유지'}
-
-═══════════════════════════════════════════════════════════════
                         보고서 종료
 ═══════════════════════════════════════════════════════════════
 
@@ -534,6 +506,7 @@ ${balance > 0 ? '✅' : '⚠️'} 저축률: ${savingsRate}% ${parseFloat(saving
                 // 버튼들 표시
                 document.getElementById('copyBtn').style.display = 'inline-block';
                 document.getElementById('downloadBtn').style.display = 'inline-block';
+                document.getElementById('pngBtn').style.display = 'inline-block';
                 
                 showStatus('URL 데이터 기반 보고서가 성공적으로 생성되었습니다!', 'success');
                 
@@ -627,6 +600,169 @@ ${balance > 0 ? '✅' : '⚠️'} 저축률: ${savingsRate}% ${parseFloat(saving
                 window.URL.revokeObjectURL(url);
                 
                 showStatus('TXT 파일이 다운로드되었습니다: ' + filename, 'success');
+            }
+        }
+
+        function generatePNGReport() {
+            if (!window.urlData) {
+                showStatus('보고서 데이터가 없습니다. 먼저 보고서를 생성해주세요.', 'error');
+                return;
+            }
+
+            showStatus('PNG 이미지를 생성하는 중...', 'info');
+
+            try {
+                const data = window.urlData;
+                
+                // Canvas 생성
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // 모바일 친화적 크기 설정 (세로로 긴 형태)
+                canvas.width = 800;
+                canvas.height = 1200;
+                
+                // 배경색 설정
+                const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                gradient.addColorStop(0, '#667eea');
+                gradient.addColorStop(1, '#764ba2');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // 폰트 설정
+                ctx.textAlign = 'center';
+                ctx.fillStyle = 'white';
+                
+                let y = 60;
+                const leftMargin = 50;
+                const rightMargin = canvas.width - 50;
+                const centerX = canvas.width / 2;
+                
+                // 제목
+                ctx.font = 'bold 32px Arial';
+                ctx.fillText('💰 월별 자금현황 보고서', centerX, y);
+                y += 40;
+                
+                // 대상월
+                ctx.font = '20px Arial';
+                const targetMonth = data.targetMonth || new Date().toISOString().slice(0, 7);
+                const targetMonthFormatted = new Date(targetMonth + '-01').toLocaleDateString('ko-KR', {year: 'numeric', month: 'long'});
+                ctx.fillText(`📅 ${targetMonthFormatted}`, centerX, y);
+                y += 60;
+                
+                // 동적 계산
+                const incomeEntries = Object.entries(data.income || {});
+                const expenseFixedEntries = Object.entries(data.expenseFixed || {});
+                const expenseVariableEntries = Object.entries(data.expenseVariable || {});
+                const assetEntries = Object.entries(data.assets || {});
+                
+                const totalIncome = incomeEntries.reduce((sum, [key, value]) => sum + value, 0);
+                const totalFixedExpense = expenseFixedEntries.reduce((sum, [key, value]) => sum + value, 0);
+                const totalVariableExpense = expenseVariableEntries.reduce((sum, [key, value]) => sum + value, 0);
+                const totalExpense = totalFixedExpense + totalVariableExpense;
+                const totalAsset = assetEntries.reduce((sum, [key, value]) => sum + value, 0);
+                const balance = totalIncome - totalExpense;
+                
+                // 요약 박스 배경
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.fillRect(leftMargin, y - 30, rightMargin - leftMargin, 120);
+                
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 24px Arial';
+                ctx.fillText('📊 월간 요약', centerX, y);
+                y += 40;
+                
+                ctx.font = '18px Arial';
+                ctx.fillText(`💰 총 수입: ${totalIncome.toLocaleString()}원`, centerX, y);
+                y += 30;
+                ctx.fillText(`💸 총 지출: ${totalExpense.toLocaleString()}원`, centerX, y);
+                y += 30;
+                ctx.fillText(`📈 수지차액: ${balance.toLocaleString()}원`, centerX, y);
+                y += 50;
+                
+                // 섹션별 상세 내역 그리기 함수
+                function drawSection(title, entries, startY) {
+                    let currentY = startY;
+                    
+                    // 섹션 배경
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+                    const sectionHeight = 40 + (entries.length * 25) + 20;
+                    ctx.fillRect(leftMargin, currentY - 25, rightMargin - leftMargin, sectionHeight);
+                    
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 20px Arial';
+                    ctx.fillText(title, centerX, currentY);
+                    currentY += 35;
+                    
+                    ctx.font = '16px Arial';
+                    ctx.textAlign = 'left';
+                    
+                    entries.forEach(([name, value]) => {
+                        ctx.fillText(`• ${name}`, leftMargin + 20, currentY);
+                        ctx.textAlign = 'right';
+                        ctx.fillText(`${value.toLocaleString()}원`, rightMargin - 20, currentY);
+                        ctx.textAlign = 'left';
+                        currentY += 25;
+                    });
+                    
+                    ctx.textAlign = 'center';
+                    return currentY + 20;
+                }
+                
+                // 수입 섹션
+                if (incomeEntries.length > 0) {
+                    y = drawSection('💵 수입 내역', incomeEntries, y);
+                }
+                
+                // 고정지출 섹션
+                if (expenseFixedEntries.length > 0) {
+                    y = drawSection('🔸 고정지출 내역', expenseFixedEntries, y);
+                }
+                
+                // 변동지출 섹션
+                if (expenseVariableEntries.length > 0) {
+                    y = drawSection('🔹 변동지출 내역', expenseVariableEntries, y);
+                }
+                
+                // 자산 섹션
+                if (assetEntries.length > 0) {
+                    y = drawSection('🏦 보유자산 내역', assetEntries, y);
+                }
+                
+                // 하단 정보
+                y = Math.max(y, canvas.height - 100);
+                ctx.font = '14px Arial';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                const today = new Date();
+                const dateStr = today.toLocaleDateString('ko-KR');
+                ctx.fillText(`생성일: ${dateStr}`, centerX, y);
+                y += 20;
+                ctx.fillText('🤖 자동 생성된 보고서', centerX, y);
+                
+                // PNG 다운로드
+                canvas.toBlob(function(blob) {
+                    const today = new Date();
+                    const year = today.getFullYear();
+                    const month = String(today.getMonth() + 1).padStart(2, '0');
+                    const date = String(today.getDate()).padStart(2, '0');
+                    
+                    const filename = `월별자금현황보고서_${year}-${month}-${date}.png`;
+                    
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    
+                    showStatus('PNG 이미지가 다운로드되었습니다: ' + filename, 'success');
+                }, 'image/png');
+                
+            } catch (error) {
+                console.error('PNG 생성 오류:', error);
+                showStatus('PNG 생성 중 오류가 발생했습니다: ' + error.message, 'error');
             }
         }
     </script>
