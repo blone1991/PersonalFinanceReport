@@ -12,7 +12,7 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Nanum Gothic', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
@@ -152,12 +152,15 @@
         </div>
     </div>
 
+    <!-- Google Fonts - Nanum Gothic -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
+    
     <!-- jsPDF 라이브러리 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <!-- jsPDF autoTable 플러그인 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    <!-- 나눔고딕 폰트 -->
-    <script src="./font/myNanumGothic-normal.js"></script>
 
     <script>
         // URL 파라미터에서 rowId 추출
@@ -187,10 +190,8 @@
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF('p', 'mm', 'a4');
                 
-                // 나눔고딕 폰트 추가
-                doc.addFileToVFS('myNanumGothic-normal.ttf', myNanumGothic);
-                doc.addFont('myNanumGothic-normal.ttf', 'myNanumGothic', 'normal');
-                doc.setFont('myNanumGothic');
+                // 기본 폰트 설정 (한글 지원)
+                doc.setFont('helvetica');
                 
                 // 현재 날짜
                 const today = new Date();
@@ -220,7 +221,7 @@
                 
                 doc.setFontSize(14);
                 doc.setTextColor(6, 95, 70); // #065f46
-                doc.text('📊 월간 요약', 25, yPosition + 10);
+                doc.text('월간 요약', 25, yPosition + 10);
                 
                 doc.setFontSize(11);
                 doc.setTextColor(0, 0, 0);
@@ -233,7 +234,7 @@
                 // === 수입 현황 테이블 ===
                 doc.setFontSize(14);
                 doc.setTextColor(30, 60, 114);
-                doc.text('📈 수입 현황', 15, yPosition);
+                doc.text('수입 현황', 15, yPosition);
                 yPosition += 10;
                 
                 const incomeData = [
@@ -276,12 +277,12 @@
                 // === 지출 현황 테이블 ===
                 doc.setFontSize(14);
                 doc.setTextColor(30, 60, 114);
-                doc.text('📉 지출 현황', 15, yPosition);
+                doc.text('지출 현황', 15, yPosition);
                 yPosition += 10;
                 
                 // 고정지출 테이블
                 doc.setFontSize(12);
-                doc.text('【고정지출】', 15, yPosition);
+                doc.text('고정지출', 15, yPosition);
                 yPosition += 5;
                 
                 const fixedExpenseData = [
@@ -326,7 +327,7 @@
                 // 변동지출 (오른쪽)
                 const variableY = yPosition;
                 doc.setFontSize(12);
-                doc.text('【변동지출】', 105, variableY);
+                doc.text('변동지출', 105, variableY);
                 
                 const variableExpenseData = [
                     ['변동지출 총액', '750,000원']
@@ -377,7 +378,7 @@
                 // === 자산 현황 테이블 ===
                 doc.setFontSize(14);
                 doc.setTextColor(30, 60, 114);
-                doc.text('💰 자산 현황', 15, yPosition);
+                doc.text('자산 현황', 15, yPosition);
                 yPosition += 10;
                 
                 const assetData = [
@@ -429,7 +430,7 @@
                 
                 // 미리보기 메시지 표시
                 const previewDiv = document.getElementById('previewDiv');
-                previewDiv.innerHTML = '<div class="preview">PDF 보고서가 생성되어 다운로드되었습니다.\n\n포함된 내용:\n✓ 전문적인 헤더 디자인\n✓ 월간 요약 박스\n✓ 수입 현황 테이블\n✓ 고정/변동 지출 분석\n✓ 자산 현황 요약\n✓ 나눔고딕 폰트 적용</div>';
+                previewDiv.innerHTML = '<div class="preview">PDF 보고서가 생성되어 다운로드되었습니다.\n\n포함된 내용:\n✓ 전문적인 헤더 디자인\n✓ 월간 요약 박스\n✓ 수입 현황 테이블\n✓ 고정/변동 지출 분석\n✓ 자산 현황 요약\n✓ 웹폰트(Nanum Gothic) 적용</div>';
                 
             } catch (error) {
                 console.error('PDF 생성 오류:', error);
