@@ -172,9 +172,10 @@
             const canvas = document.getElementById('pdfCanvas');
             const ctx = canvas.getContext('2d');
             
-            // Canvas 크기 설정 (A4: 595x842px at 72 DPI)
-            canvas.width = 595;
-            canvas.height = 842;
+            // Canvas 크기 설정 (A4: 794x1123px at 96 DPI)
+            canvas.width = 794;
+            canvas.height = 1123;
+            canvas.style.display = 'block';
             
             // 배경색 설정
             ctx.fillStyle = '#ffffff';
@@ -184,111 +185,131 @@
             ctx.fillStyle = '#000000';
             ctx.textAlign = 'left';
             
-            let y = 60;
+            let y = 80;
             
             // 제목
-            ctx.font = 'bold 24px Arial';
+            ctx.font = 'bold 32px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText('2025-09 Monthly Financial Report', canvas.width / 2, y);
-            y += 40;
+            ctx.fillText('2025-09월 자금현황 보고서', canvas.width / 2, y);
+            y += 50;
             
             // 생성일
-            ctx.font = '14px Arial';
-            ctx.fillText('Generated: ' + new Date().toLocaleDateString(), canvas.width / 2, y);
-            y += 60;
+            ctx.font = '18px Arial';
+            ctx.fillText('생성일: ' + new Date().toLocaleDateString('ko-KR'), canvas.width / 2, y);
+            y += 80;
             
             // 선 그리기
             ctx.strokeStyle = '#4f46e5';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 3;
             ctx.beginPath();
-            ctx.moveTo(50, y - 20);
-            ctx.lineTo(545, y - 20);
+            ctx.moveTo(60, y - 30);
+            ctx.lineTo(734, y - 30);
             ctx.stroke();
             
             // 월간 요약
             ctx.textAlign = 'left';
-            ctx.font = 'bold 18px Arial';
-            ctx.fillText('Monthly Summary', 50, y);
-            y += 30;
+            ctx.font = 'bold 24px Arial';
+            ctx.fillText('월간 요약', 60, y);
+            y += 40;
             
             // 요약 표
-            drawTable(ctx, 50, y, [
-                ['Total Income', '3,600,000 KRW'],
-                ['Total Expenses', '2,850,000 KRW'],
-                ['Remaining', '750,000 KRW']
-            ], 200);
-            y += 120;
-            
-            // 수입 현황
-            ctx.font = 'bold 18px Arial';
-            ctx.fillText('Income Details', 50, y);
-            y += 30;
-            
-            drawTable(ctx, 50, y, [
-                ['Salary', '3,200,000 KRW'],
-                ['Investment', '250,000 KRW'],
-                ['Other Income', '150,000 KRW'],
-                ['Total Income', '3,600,000 KRW']
-            ], 200);
+            drawTable(ctx, 60, y, [
+                ['총 수입', '3,600,000원'],
+                ['총 지출', '2,850,000원'],
+                ['잔여금', '750,000원']
+            ], 270);
             y += 140;
             
+            // 수입 현황
+            ctx.font = 'bold 24px Arial';
+            ctx.fillText('수입 현황', 60, y);
+            y += 40;
+            
+            drawTable(ctx, 60, y, [
+                ['급여', '3,200,000원'],
+                ['투자수익', '250,000원'],
+                ['기타수익', '150,000원'],
+                ['총 수입', '3,600,000원']
+            ], 270);
+            y += 160;
+            
             // 지출 현황
-            ctx.font = 'bold 18px Arial';
-            ctx.fillText('Expense Details', 50, y);
-            y += 30;
+            ctx.font = 'bold 24px Arial';
+            ctx.fillText('지출 현황', 60, y);
+            y += 40;
             
-            ctx.font = 'bold 16px Arial';
-            ctx.fillText('Fixed Expenses', 70, y);
-            y += 25;
+            ctx.font = 'bold 20px Arial';
+            ctx.fillText('고정지출', 80, y);
+            y += 35;
             
-            drawTable(ctx, 70, y, [
-                ['Loan Payment', '300,000 KRW'],
-                ['Insurance', '180,000 KRW'],
-                ['Transportation', '120,000 KRW'],
-                ['Communication', '75,000 KRW'],
-                ['Family Support', '500,000 KRW'],
-                ['Meeting Fee', '30,000 KRW'],
-                ['Subscription', '45,000 KRW'],
-                ['Savings', '800,000 KRW'],
-                ['Others', '50,000 KRW'],
-                ['Fixed Total', '2,100,000 KRW']
-            ], 180);
-            y += 280;
+            drawTable(ctx, 80, y, [
+                ['대출상환', '300,000원'],
+                ['보험료', '180,000원'],
+                ['교통비', '120,000원'],
+                ['통신비', '75,000원'],
+                ['어머니생활비', '500,000원'],
+                ['모임회비', '30,000원'],
+                ['구독료', '45,000원'],
+                ['적금', '800,000원'],
+                ['기타', '50,000원'],
+                ['고정지출 소계', '2,100,000원']
+            ], 250);
+            y += 320;
             
-            ctx.font = 'bold 16px Arial';
-            ctx.fillText('Variable Expenses', 70, y);
-            y += 25;
+            ctx.font = 'bold 20px Arial';
+            ctx.fillText('변동지출', 80, y);
+            y += 35;
             
-            drawTable(ctx, 70, y, [
-                ['Variable Total', '750,000 KRW']
-            ], 180);
-            y += 50;
+            drawTable(ctx, 80, y, [
+                ['변동지출 총액', '750,000원']
+            ], 250);
+            y += 65;
             
-            drawTable(ctx, 50, y, [
-                ['Total Expenses', '2,850,000 KRW']
-            ], 200);
+            drawTable(ctx, 60, y, [
+                ['총 지출', '2,850,000원']
+            ], 270);
             
-            // Canvas를 이미지로 변환하고 PDF 생성
-            const imgData = canvas.toDataURL('image/png');
-            
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF('p', 'pt', 'a4');
-            
-            // 이미지를 PDF에 추가
-            pdf.addImage(imgData, 'PNG', 0, 0, 595, 842);
-            
-            // 파일명 생성
-            const today = new Date();
-            const dateStr = today.getFullYear() + '-' + 
-                          String(today.getMonth() + 1).padStart(2, '0');
-            
-            pdf.save('Monthly_Financial_Report_' + dateStr + '.pdf');
-            
-            showStatus('이미지 PDF가 성공적으로 생성되었습니다!', 'success');
+            // Canvas 렌더링 완료 후 이미지 생성
+            setTimeout(() => {
+                try {
+                    // Canvas를 Blob으로 변환
+                    canvas.toBlob(function(blob) {
+                        const reader = new FileReader();
+                        reader.onload = function() {
+                            const imgData = reader.result;
+                            
+                            // PDF 생성
+                            const { jsPDF } = window.jspdf;
+                            const pdf = new jsPDF('p', 'mm', 'a4');
+                            
+                            // A4 크기로 이미지 추가 (210 x 297 mm)
+                            pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
+                            
+                            // 파일명 생성
+                            const today = new Date();
+                            const dateStr = today.getFullYear() + '-' + 
+                                          String(today.getMonth() + 1).padStart(2, '0');
+                            
+                            pdf.save('월별자금현황_' + dateStr + '.pdf');
+                            
+                            showStatus('이미지 PDF가 성공적으로 생성되었습니다!', 'success');
+                            
+                            // Canvas 숨기기
+                            canvas.style.display = 'none';
+                        };
+                        reader.readAsDataURL(blob);
+                    }, 'image/png', 1.0);
+                    
+                } catch (error) {
+                    console.error('PDF 생성 오류:', error);
+                    showStatus('PDF 생성 중 오류가 발생했습니다: ' + error.message, 'error');
+                    canvas.style.display = 'none';
+                }
+            }, 500); // 렌더링 완료 대기
         }
         
         function drawTable(ctx, x, y, data, colWidth) {
-            const rowHeight = 25;
+            const rowHeight = 30;
             const tableWidth = colWidth * 2;
             
             // 테이블 테두리
@@ -301,20 +322,20 @@
                 // 행 배경 (마지막 행은 강조)
                 if (i === data.length - 1) {
                     ctx.fillStyle = '#f3f4f6';
-                    ctx.fillRect(x, currentY - 15, tableWidth, rowHeight);
+                    ctx.fillRect(x, currentY - 20, tableWidth, rowHeight);
                 }
                 
                 // 셀 테두리
-                ctx.strokeRect(x, currentY - 15, colWidth, rowHeight);
-                ctx.strokeRect(x + colWidth, currentY - 15, colWidth, rowHeight);
+                ctx.strokeRect(x, currentY - 20, colWidth, rowHeight);
+                ctx.strokeRect(x + colWidth, currentY - 20, colWidth, rowHeight);
                 
                 // 텍스트
                 ctx.fillStyle = '#000000';
-                ctx.font = (i === data.length - 1) ? 'bold 14px Arial' : '14px Arial';
+                ctx.font = (i === data.length - 1) ? 'bold 16px Arial' : '16px Arial';
                 ctx.textAlign = 'left';
-                ctx.fillText(data[i][0], x + 10, currentY);
+                ctx.fillText(data[i][0], x + 15, currentY);
                 ctx.textAlign = 'right';
-                ctx.fillText(data[i][1], x + tableWidth - 10, currentY);
+                ctx.fillText(data[i][1], x + tableWidth - 15, currentY);
             }
         }
     </script>
