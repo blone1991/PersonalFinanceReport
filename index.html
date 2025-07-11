@@ -3,15 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>월별 자금현황 PDF Export (나눔고딕)</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <title>월별 자금현황 PDF Export</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="js/myNanumGothic-normal.js"></script> 
-    
     <style>
-        /* 기존 CSS는 유지 */
         * {
             margin: 0;
             padding: 0;
@@ -19,7 +13,7 @@
         }
 
         body {
-            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
@@ -125,280 +119,46 @@
             box-shadow: 0 8px 15px rgba(79, 70, 229, 0.3);
         }
 
-        .amount {
-            font-family: 'Courier New', monospace;
-            font-weight: bold;
-        }
-
-        .positive {
-            color: #059669;
-        }
-
-        .negative {
-            color: #dc2626;
-        }
-
-        /* HTML 콘텐츠 영역은 그대로 유지 (데이터 확인용) */
-        .pdf-content {
-            display: block; /* 항상 보이게 변경 */
-            width: 210mm;
-            min-height: 297mm;
-            padding: 20mm;
-            background: white;
-            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            font-size: 14px;
-            line-height: 1.6;
-            margin: 20px auto;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-
-        .report-header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #4f46e5;
-        }
-
-        .report-title {
-            font-size: 24px;
-            font-weight: bold;
-            color: #1f2937;
-            margin-bottom: 10px;
-        }
-
-        .report-date {
-            color: #6b7280;
-            font-size: 14px;
-        }
-
-        .section {
-            margin-bottom: 30px;
-        }
-
-        .section-title {
-            font-size: 18px;
-            font-weight: bold;
-            color: #1f2937;
-            margin-bottom: 15px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-
-        .data-table th,
-        .data-table td {
-            padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .data-table th {
-            background: #f9fafb;
-            font-weight: bold;
-        }
-
-        .data-table td:last-child {
-            text-align: right;
-            font-weight: bold;
-        }
-
-        .total-row {
-            background: #f3f4f6;
-            font-weight: bold;
-        }
-
-        .subsection {
-            margin-left: 20px;
-            margin-bottom: 15px;
-        }
-
-        .subsection-title {
-            font-size: 16px;
-            font-weight: bold;
-            color: #374151;
-            margin-bottom: 10px;
+        #pdfCanvas {
+            display: none;
+            border: 1px solid #ddd;
+            margin: 20px 0;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>📊 월별 자금현황 PDF Export (나눔고딕 적용)</h1>
-            <p>나눔고딕 폰트가 적용된 PDF 보고서를 생성합니다.</p>
+            <h1>📊 월별 자금현황 PDF Export</h1>
+            <p>Canvas 기반 이미지 PDF 생성</p>
         </div>
 
         <div class="main-content">
             <div class="auto-section">
-                <h3>✨ 나눔고딕 폰트 PDF 생성</h3>
-                <p>이제 PDF에서 나눔고딕 폰트로 한글이 깨지지 않고 보기 좋게 나옵니다.</p>
-                <button class="btn" onclick="generatePDF()">📄 월별 자금현황 PDF 생성</button>
+                <h3>🚀 이미지 기반 PDF 생성</h3>
+                <p>Canvas를 사용해서 이미지로 PDF를 생성합니다</p>
+                <button class="btn" onclick="generateImagePDF()">📄 이미지 PDF 생성</button>
             </div>
 
             <div id="statusDiv"></div>
-        </div>
-    </div>
-
-    <div id="pdfContent" class="pdf-content">
-        <div class="report-header">
-            <div class="report-title">2025-09월 자금현황 보고서</div>
-            <div class="report-date">생성일: 2025년 7월 10일</div>
-        </div>
-
-        <div class="section">
-            <div class="section-title">📊 월간 요약</div>
-            <table class="data-table">
-                <tbody>
-                    <tr>
-                        <td>총 수입</td>
-                        <td>3,600,000원</td>
-                    </tr>
-                    <tr>
-                        <td>총 지출</td>
-                        <td>2,850,000원</td>
-                    </tr>
-                    <tr class="total-row">
-                        <td>잔여금</td>
-                        <td>750,000원</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <div class="section">
-            <div class="section-title">📈 수입 현황</div>
-            <table class="data-table">
-                <tbody>
-                    <tr>
-                        <td>급여</td>
-                        <td>3,200,000원</td>
-                    </tr>
-                    <tr>
-                        <td>투자수익</td>
-                        <td>250,000원</td>
-                    </tr>
-                    <tr>
-                        <td>기타수익</td>
-                        <td>150,000원</td>
-                    </tr>
-                    <tr class="total-row">
-                        <td>총 수입</td>
-                        <td>3,600,000원</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <div class="section">
-            <div class="section-title">📉 지출 현황</div>
-            
-            <div class="subsection">
-                <div class="subsection-title">【고정지출】</div>
-                <table class="data-table">
-                    <tbody>
-                        <tr>
-                            <td>대출상환</td>
-                            <td>300,000원</td>
-                        </tr>
-                        <tr>
-                            <td>보험료</td>
-                            <td>180,000원</td>
-                        </tr>
-                        <tr>
-                            <td>교통비</td>
-                            <td>120,000원</td>
-                        </tr>
-                        <tr>
-                            <td>통신비</td>
-                            <td>75,000원</td>
-                        </tr>
-                        <tr>
-                            <td>어머니생활비</td>
-                            <td>500,000원</td>
-                        </tr>
-                        <tr>
-                            <td>모임회비</td>
-                            <td>30,000원</td>
-                        </tr>
-                        <tr>
-                            <td>구독료</td>
-                            <td>45,000원</td>
-                        </tr>
-                        <tr>
-                            <td>적금</td>
-                            <td>800,000원</td>
-                        </tr>
-                        <tr>
-                            <td>기타</td>
-                            <td>50,000원</td>
-                        </tr>
-                        <tr class="total-row">
-                            <td>고정지출 소계</td>
-                            <td>2,100,000원</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="subsection">
-                <div class="subsection-title">【변동지출】</div>
-                <table class="data-table">
-                    <tbody>
-                        <tr>
-                            <td>변동지출 총액</td>
-                            <td>750,000원</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <table class="data-table">
-                <tbody>
-                    <tr class="total-row">
-                        <td>총 지출</td>
-                        <td>2,850,000원</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <div class="section">
-            <div class="section-title">💰 자산 현황</div>
-            <table class="data-table">
-                <tbody>
-                    <tr>
-                        <td>현금</td>
-                        <td>5,200,000원</td>
-                    </tr>
-                    <tr>
-                        <td>적금</td>
-                        <td>12,500,000원</td>
-                    </tr>
-                    <tr class="total-row">
-                        <td>총 자산</td>
-                        <td>17,700,000원</td>
-                    </tr>
-                </tbody>
-            </table>
+            <canvas id="pdfCanvas" width="595" height="842"></canvas>
         </div>
     </div>
 
     <script>
-        const { jsPDF } = window.jspdf;
-        // 폰트 이름은 변환 시 지정한 이름과 동일해야 합니다.
-        // 'jspdf-fontconverter ./font/NanumGothic-Regular.ttf myNanumGothic' 명령으로 생성했을 때의 이름입니다.
-        const defaultFont = 'myNanumGothic'; 
-
-        // URL 파라미터에서 rowId 추출 (이 예시에서는 사용하지 않음)
+        // URL 파라미터에서 rowId 추출
         const urlParams = new URLSearchParams(window.location.search);
         const rowId = urlParams.get('rowId');
 
         window.onload = function() {
-            showStatus('PDF 생성 버튼을 클릭하여 나눔고딕 폰트가 적용된 월별 자금현황 보고서를 다운로드하세요.', 'info');
+            if (rowId) {
+                showStatus('ROW ID가 감지되었습니다: ' + rowId, 'info');
+                setTimeout(() => {
+                    generateImagePDF();
+                }, 2000);
+            } else {
+                showStatus('테스트 모드입니다. 버튼을 클릭해서 샘플 PDF를 생성해보세요.', 'info');
+            }
         };
 
         function showStatus(message, type) {
@@ -406,183 +166,156 @@
             statusDiv.innerHTML = '<div class="status ' + type + '">' + message + '</div>';
         }
 
-        function generatePDF() {
-            showStatus('나눔고딕 폰트로 PDF를 생성하는 중...', 'info');
-
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            const margin = 20; // 좌우 여백
-            let y = margin; // 현재 Y 좌표
-
-            // 폰트 추가: 변환된 파일명과 폰트 이름이 일치해야 합니다.
-            // 'myNanumGothic-normal.js' 파일이 로드되면 이 폰트를 사용할 수 있습니다.
-            pdf.addFont(defaultFont + '-normal.ttf', defaultFont, 'normal'); // jspdf-fontconverter가 생성하는 파일 이름 규칙
-            pdf.setFont(defaultFont);
-
-            const addText = (text, x, yPos, fontSize, fontStyle = 'normal') => {
-                pdf.setFontSize(fontSize);
-                pdf.setFont(defaultFont, fontStyle);
-                pdf.text(text, x, yPos);
-            };
-
-            const addTitle = (title, fontSize, yPos, bold = false) => {
-                pdf.setFontSize(fontSize);
-                pdf.setFont(defaultFont, bold ? 'bold' : 'normal'); // 나눔고딕에 볼드 스타일이 있다면 적용됩니다.
-                pdf.text(title, pdf.internal.pageSize.width / 2, yPos, { align: 'center' });
-            };
-
-            const addTable = (headers, data, yPos, columnWidths, columnAligns) => {
-                const startX = margin;
-                const rowHeight = 10;
-                const headerBg = '#F9FAFB'; // 테이블 헤더 배경색
-                const totalRowBg = '#F3F4F6'; // 총계 행 배경색
-
-                pdf.setFontSize(10);
-                pdf.setFont(defaultFont, 'bold'); // 헤더는 볼드체
-
-                // Headers
-                pdf.setFillColor(headerBg);
-                pdf.rect(startX, yPos, pdf.internal.pageSize.width - 2 * margin, rowHeight, 'F');
-                let currentX = startX;
-                headers.forEach((header, i) => {
-                    const width = columnWidths[i];
-                    pdf.text(header, currentX + 5, yPos + rowHeight / 2 + 2, { baseline: 'middle' });
-                    currentX += width;
-                });
-                yPos += rowHeight;
-
-                // Data Rows
-                pdf.setFont(defaultFont, 'normal'); // 데이터는 일반체
-                data.forEach((row, rowIndex) => {
-                    pdf.setFillColor(row.isTotal ? totalRowBg : '#FFFFFF');
-                    pdf.rect(startX, yPos, pdf.internal.pageSize.width - 2 * margin, rowHeight, 'F');
-                    currentX = startX;
-                    row.cells.forEach((cell, cellIndex) => {
-                        const width = columnWidths[cellIndex];
-                        const align = columnAligns[cellIndex];
-                        let xOffset = 5; // 기본 좌측 여백
-
-                        if (align === 'right') {
-                            // 텍스트 너비를 계산하여 우측 정렬
-                            xOffset = width - pdf.getStringUnitWidth(cell) * pdf.internal.getFontSize() / pdf.internal.scaleFactor - 5;
-                        } else if (align === 'center') {
-                            // 텍스트 너비를 계산하여 중앙 정렬
-                            xOffset = (width - pdf.getStringUnitWidth(cell) * pdf.internal.getFontSize() / pdf.internal.scaleFactor) / 2;
-                        }
-
-                        pdf.text(cell, currentX + xOffset, yPos + rowHeight / 2 + 2, { baseline: 'middle' });
-                        currentX += width;
-                    });
-                    yPos += rowHeight;
-                });
-                return yPos; // 다음 콘텐츠 시작 Y 좌표 반환
-            };
-
-
-            // --- 보고서 제목 ---
-            y += 10;
-            addTitle('2025-09월 자금현황 보고서', 24, y, true);
-            y += 10;
-            addText('생성일: 2025년 7월 10일', pdf.internal.pageSize.width / 2, y, 12, 'normal'); // 가운데 정렬 아님
-            pdf.line(margin, y + 5, pdf.internal.pageSize.width - margin, y + 5); // 밑줄
-            y += 15;
-
-            // --- 월간 요약 ---
-            y += 15;
-            addText('📊 월간 요약', margin, y, 18, 'bold');
-            y += 5;
-            pdf.line(margin, y, pdf.internal.pageSize.width - margin, y);
-            y += 5;
-
-            let summaryData = [
-                { cells: ['총 수입', '3,600,000원'], isTotal: false },
-                { cells: ['총 지출', '2,850,000원'], isTotal: false },
-                { cells: ['잔여금', '750,000원'], isTotal: true }
-            ];
-            y = addTable(['항목', '금액'], summaryData, y, [(pdf.internal.pageSize.width - 2 * margin) / 2, (pdf.internal.pageSize.width - 2 * margin) / 2], ['left', 'right']);
-            y += 10;
-
-            // --- 수입 현황 ---
-            y += 10;
-            addText('📈 수입 현황', margin, y, 18, 'bold');
-            y += 5;
-            pdf.line(margin, y, pdf.internal.pageSize.width - margin, y);
-            y += 5;
-
-            let incomeData = [
-                { cells: ['급여', '3,200,000원'], isTotal: false },
-                { cells: ['투자수익', '250,000원'], isTotal: false },
-                { cells: ['기타수익', '150,000원'], isTotal: false },
-                { cells: ['총 수입', '3,600,000원'], isTotal: true }
-            ];
-            y = addTable(['항목', '금액'], incomeData, y, [(pdf.internal.pageSize.width - 2 * margin) / 2, (pdf.internal.pageSize.width - 2 * margin) / 2], ['left', 'right']);
-            y += 10;
-
-            // --- 지출 현황 ---
-            y += 10;
-            addText('📉 지출 현황', margin, y, 18, 'bold');
-            y += 5;
-            pdf.line(margin, y, pdf.internal.pageSize.width - margin, y);
-            y += 5;
-
-            // 고정지출
-            addText('【고정지출】', margin + 10, y, 16, 'bold');
-            y += 5;
-            let fixedExpenses = [
-                { cells: ['대출상환', '300,000원'], isTotal: false },
-                { cells: ['보험료', '180,000원'], isTotal: false },
-                { cells: ['교통비', '120,000원'], isTotal: false },
-                { cells: ['통신비', '75,000원'], isTotal: false },
-                { cells: ['어머니생활비', '500,000원'], isTotal: false },
-                { cells: ['모임회비', '30,000원'], isTotal: false },
-                { cells: ['구독료', '45,000원'], isTotal: false },
-                { cells: ['적금', '800,000원'], isTotal: false },
-                { cells: ['기타', '50,000원'], isTotal: false },
-                { cells: ['고정지출 소계', '2,100,000원'], isTotal: true }
-            ];
-            y = addTable(['항목', '금액'], fixedExpenses, y, [(pdf.internal.pageSize.width - 2 * margin - 20) / 2, (pdf.internal.pageSize.width - 2 * margin - 20) / 2], ['left', 'right']);
-            y += 10;
-
-            // 변동지출
-            addText('【변동지출】', margin + 10, y, 16, 'bold');
-            y += 5;
-            let variableExpenses = [
-                { cells: ['변동지출 총액', '750,000원'], isTotal: true }
-            ];
-            y = addTable(['항목', '금액'], variableExpenses, y, [(pdf.internal.pageSize.width - 2 * margin - 20) / 2, (pdf.internal.pageSize.width - 2 * margin - 20) / 2], ['left', 'right']);
-            y += 10;
-
-            // 총 지출
-            let totalExpense = [
-                { cells: ['총 지출', '2,850,000원'], isTotal: true }
-            ];
-            y = addTable(['항목', '금액'], totalExpense, y, [(pdf.internal.pageSize.width - 2 * margin) / 2, (pdf.internal.pageSize.width - 2 * margin) / 2], ['left', 'right']);
-            y += 10;
-
-            // --- 자산 현황 ---
-            y += 10;
-            addText('💰 자산 현황', margin, y, 18, 'bold');
-            y += 5;
-            pdf.line(margin, y, pdf.internal.pageSize.width - margin, y);
-            y += 5;
-
-            let assetData = [
-                { cells: ['현금', '5,200,000원'], isTotal: false },
-                { cells: ['적금', '12,500,000원'], isTotal: false },
-                { cells: ['총 자산', '17,700,000원'], isTotal: true }
-            ];
-            y = addTable(['항목', '금액'], assetData, y, [(pdf.internal.pageSize.width - 2 * margin) / 2, (pdf.internal.pageSize.width - 2 * margin) / 2], ['left', 'right']);
-            y += 10;
-
-
-            // PDF 저장
+        function generateImagePDF() {
+            showStatus('이미지 PDF를 생성하는 중...', 'info');
+            
+            const canvas = document.getElementById('pdfCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Canvas 크기 설정 (A4: 595x842px at 72 DPI)
+            canvas.width = 595;
+            canvas.height = 842;
+            
+            // 배경색 설정
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 텍스트 스타일 설정
+            ctx.fillStyle = '#000000';
+            ctx.textAlign = 'left';
+            
+            let y = 60;
+            
+            // 제목
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('2025-09 Monthly Financial Report', canvas.width / 2, y);
+            y += 40;
+            
+            // 생성일
+            ctx.font = '14px Arial';
+            ctx.fillText('Generated: ' + new Date().toLocaleDateString(), canvas.width / 2, y);
+            y += 60;
+            
+            // 선 그리기
+            ctx.strokeStyle = '#4f46e5';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(50, y - 20);
+            ctx.lineTo(545, y - 20);
+            ctx.stroke();
+            
+            // 월간 요약
+            ctx.textAlign = 'left';
+            ctx.font = 'bold 18px Arial';
+            ctx.fillText('Monthly Summary', 50, y);
+            y += 30;
+            
+            // 요약 표
+            drawTable(ctx, 50, y, [
+                ['Total Income', '3,600,000 KRW'],
+                ['Total Expenses', '2,850,000 KRW'],
+                ['Remaining', '750,000 KRW']
+            ], 200);
+            y += 120;
+            
+            // 수입 현황
+            ctx.font = 'bold 18px Arial';
+            ctx.fillText('Income Details', 50, y);
+            y += 30;
+            
+            drawTable(ctx, 50, y, [
+                ['Salary', '3,200,000 KRW'],
+                ['Investment', '250,000 KRW'],
+                ['Other Income', '150,000 KRW'],
+                ['Total Income', '3,600,000 KRW']
+            ], 200);
+            y += 140;
+            
+            // 지출 현황
+            ctx.font = 'bold 18px Arial';
+            ctx.fillText('Expense Details', 50, y);
+            y += 30;
+            
+            ctx.font = 'bold 16px Arial';
+            ctx.fillText('Fixed Expenses', 70, y);
+            y += 25;
+            
+            drawTable(ctx, 70, y, [
+                ['Loan Payment', '300,000 KRW'],
+                ['Insurance', '180,000 KRW'],
+                ['Transportation', '120,000 KRW'],
+                ['Communication', '75,000 KRW'],
+                ['Family Support', '500,000 KRW'],
+                ['Meeting Fee', '30,000 KRW'],
+                ['Subscription', '45,000 KRW'],
+                ['Savings', '800,000 KRW'],
+                ['Others', '50,000 KRW'],
+                ['Fixed Total', '2,100,000 KRW']
+            ], 180);
+            y += 280;
+            
+            ctx.font = 'bold 16px Arial';
+            ctx.fillText('Variable Expenses', 70, y);
+            y += 25;
+            
+            drawTable(ctx, 70, y, [
+                ['Variable Total', '750,000 KRW']
+            ], 180);
+            y += 50;
+            
+            drawTable(ctx, 50, y, [
+                ['Total Expenses', '2,850,000 KRW']
+            ], 200);
+            
+            // Canvas를 이미지로 변환하고 PDF 생성
+            const imgData = canvas.toDataURL('image/png');
+            
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'pt', 'a4');
+            
+            // 이미지를 PDF에 추가
+            pdf.addImage(imgData, 'PNG', 0, 0, 595, 842);
+            
+            // 파일명 생성
             const today = new Date();
             const dateStr = today.getFullYear() + '-' + 
-                            String(today.getMonth() + 1).padStart(2, '0') + '-' +
-                            String(today.getDate()).padStart(2, '0');
+                          String(today.getMonth() + 1).padStart(2, '0');
             
-            pdf.save('월별자금현황_나눔고딕_' + dateStr + '.pdf');
+            pdf.save('Monthly_Financial_Report_' + dateStr + '.pdf');
             
-            showStatus('나눔고딕 폰트로 PDF가 성공적으로 생성되었습니다!', 'success');
+            showStatus('이미지 PDF가 성공적으로 생성되었습니다!', 'success');
+        }
+        
+        function drawTable(ctx, x, y, data, colWidth) {
+            const rowHeight = 25;
+            const tableWidth = colWidth * 2;
+            
+            // 테이블 테두리
+            ctx.strokeStyle = '#e5e7eb';
+            ctx.lineWidth = 1;
+            
+            for (let i = 0; i < data.length; i++) {
+                const currentY = y + (i * rowHeight);
+                
+                // 행 배경 (마지막 행은 강조)
+                if (i === data.length - 1) {
+                    ctx.fillStyle = '#f3f4f6';
+                    ctx.fillRect(x, currentY - 15, tableWidth, rowHeight);
+                }
+                
+                // 셀 테두리
+                ctx.strokeRect(x, currentY - 15, colWidth, rowHeight);
+                ctx.strokeRect(x + colWidth, currentY - 15, colWidth, rowHeight);
+                
+                // 텍스트
+                ctx.fillStyle = '#000000';
+                ctx.font = (i === data.length - 1) ? 'bold 14px Arial' : '14px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText(data[i][0], x + 10, currentY);
+                ctx.textAlign = 'right';
+                ctx.fillText(data[i][1], x + tableWidth - 10, currentY);
+            }
         }
     </script>
 </body>
