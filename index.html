@@ -253,22 +253,36 @@
 
             // TXT 파일 다운로드
             try {
-                const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
+                const blob = new Blob([reportContent], { 
+                    type: 'text/plain;charset=utf-8' 
+                });
+                
+                // 다운로드 링크 생성
+                const url = URL.createObjectURL(blob);
+                const downloadLink = document.createElement('a');
+                
+                downloadLink.href = url;
+                downloadLink.style.display = 'none';
                 
                 const fileDate = today.getFullYear() + '-' + 
                                String(today.getMonth() + 1).padStart(2, '0');
-                a.download = '월별자금현황_' + fileDate + '.txt';
+                               
+                downloadLink.download = '월별자금현황_' + fileDate + '.txt';
+                downloadLink.setAttribute('type', 'text/plain');
                 
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
+                // DOM에 추가하고 클릭
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
                 
-                showStatus('TXT 파일이 성공적으로 다운로드되었습니다!', 'success');
+                // 정리
+                setTimeout(() => {
+                    document.body.removeChild(downloadLink);
+                    URL.revokeObjectURL(url);
+                }, 100);
+                
+                showStatus('TXT 파일이 성공적으로 다운로드되었습니다! (파일명: 월별자금현황_' + fileDate + '.txt)', 'success');
             } catch (error) {
+                console.error('다운로드 오류:', error);
                 showStatus('파일 생성 중 오류가 발생했습니다: ' + error.message, 'error');
             }
         }
