@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>월별 자금현황 PDF Export</title>
+    <title>월별 자금현황 텍스트 보고서</title>
     <style>
         * {
             margin: 0;
@@ -12,10 +12,11 @@
         }
 
         body {
-            font-family: 'Nanum Gothic', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Nanum Gothic', 'Malgun Gothic', '맑은 고딕', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
+            line-height: 1.6;
         }
 
         .container {
@@ -84,22 +85,6 @@
             border: 1px solid #93c5fd;
         }
 
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #4f46e5;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-right: 10px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
         .btn {
             background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
             color: white;
@@ -118,49 +103,51 @@
             box-shadow: 0 8px 15px rgba(79, 70, 229, 0.3);
         }
 
-        .preview {
+        .report-preview {
             background: #f8f9fa;
-            border: 1px solid #e9ecef;
+            border: 2px solid #e9ecef;
             border-radius: 10px;
-            padding: 20px;
+            padding: 30px;
             margin: 20px 0;
-            font-family: 'Courier New', monospace;
+            font-family: 'Nanum Gothic', monospace;
             font-size: 14px;
-            line-height: 1.5;
-            white-space: pre-wrap;
-            max-height: 400px;
+            line-height: 1.8;
+            white-space: pre-line;
+            max-height: 600px;
             overflow-y: auto;
+            color: #2d3748;
+        }
+
+        .copy-btn {
+            background: #10b981;
+            font-size: 0.9em;
+            padding: 8px 16px;
+        }
+
+        .copy-btn:hover {
+            box-shadow: 0 8px 15px rgba(16, 185, 129, 0.3);
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>📄 월별 자금현황 PDF Export</h1>
-            <p>전문적인 PDF 보고서 생성</p>
+            <h1>📄 월별 자금현황 텍스트 보고서</h1>
+            <p>한국어 텍스트 기반 재무 보고서 생성</p>
         </div>
 
         <div class="main-content">
             <div class="auto-section">
-                <h3>📊 PDF 보고서 생성</h3>
-                <p>나눔고딕 폰트를 사용한 전문적인 회사 보고서 스타일</p>
-                <button class="btn" onclick="generatePdfReport()">📄 PDF 파일 생성</button>
+                <h3>📊 텍스트 보고서 생성</h3>
+                <p>복사하여 사용할 수 있는 한국어 텍스트 형태의 월별 자금현황 보고서</p>
+                <button class="btn" onclick="generateTextReport()">📄 텍스트 보고서 생성</button>
+                <button class="btn copy-btn" onclick="copyReport()" id="copyBtn" style="display:none;">📋 텍스트 복사</button>
             </div>
 
             <div id="statusDiv"></div>
-            <div id="previewDiv"></div>
+            <div id="reportDiv"></div>
         </div>
     </div>
-
-    <!-- Google Fonts - Nanum Gothic -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
-    
-    <!-- jsPDF 라이브러리 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <!-- jsPDF autoTable 플러그인 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
     <script>
         // URL 파라미터에서 rowId 추출
@@ -171,10 +158,10 @@
             if (rowId) {
                 showStatus('ROW ID가 감지되었습니다: ' + rowId, 'info');
                 setTimeout(() => {
-                    generatePdfReport();
+                    generateTextReport();
                 }, 2000);
             } else {
-                showStatus('테스트 모드입니다. 버튼을 클릭해서 PDF 파일을 생성해보세요.', 'info');
+                showStatus('테스트 모드입니다. 버튼을 클릭해서 텍스트 보고서를 생성해보세요.', 'info');
             }
         };
 
@@ -183,258 +170,147 @@
             statusDiv.innerHTML = '<div class="status ' + type + '">' + message + '</div>';
         }
 
-        function generatePdfReport() {
-            showStatus('PDF 보고서를 생성하는 중...', 'info');
+        function generateTextReport() {
+            showStatus('텍스트 보고서를 생성하는 중...', 'info');
             
             try {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF('p', 'mm', 'a4');
-                
-                // 기본 폰트 설정 (한글 지원)
-                doc.setFont('helvetica');
-                
                 // 현재 날짜
                 const today = new Date();
-                const dateStr = today.getFullYear() + '년 ' + 
-                              String(today.getMonth() + 1).padStart(2, '0') + '월 ' +
-                              String(today.getDate()).padStart(2, '0') + '일';
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const date = String(today.getDate()).padStart(2, '0');
+                const dateStr = `${year}년 ${month}월 ${date}일`;
                 
-                let yPosition = 25;
+                // 보고서 텍스트 생성
+                const reportText = `
+═══════════════════════════════════════════════════════════════
+                        ${year}년 ${month}월 자금현황 보고서
+═══════════════════════════════════════════════════════════════
+
+📅 보고서 생성일: ${dateStr}
+📋 보고 대상: ${year}년 ${month}월
+👤 작성자: 자동생성시스템
+
+═══════════════════════════════════════════════════════════════
+                            📊 월간 요약
+═══════════════════════════════════════════════════════════════
+
+💰 이번 달 총 수입:        3,600,000원
+💸 이번 달 총 지출:        2,850,000원
+📈 이번 달 수지차액:          750,000원
+📊 수지율:                     79.2%
+
+═══════════════════════════════════════════════════════════════
+                            💵 수입 현황
+═══════════════════════════════════════════════════════════════
+
+1. 급여소득                   3,200,000원
+2. 투자수익                     250,000원
+3. 기타수입                     150,000원
+   ─────────────────────────────────────
+   💰 총 수입                 3,600,000원
+
+═══════════════════════════════════════════════════════════════
+                            💸 지출 현황
+═══════════════════════════════════════════════════════════════
+
+🔸 고정지출
+   1. 대출상환                   300,000원
+   2. 보험료                     180,000원
+   3. 교통비                     120,000원
+   4. 통신비                      75,000원
+   5. 생활비                     500,000원
+   6. 동호회비                    30,000원
+   7. 구독료                      45,000원
+   8. 적금                       800,000원
+   9. 기타                        50,000원
+   ─────────────────────────────────────
+   소계 (고정지출)             2,100,000원
+
+🔸 변동지출
+   1. 식비/외식                  300,000원
+   2. 쇼핑/의류                  150,000원
+   3. 취미/여가                  120,000원
+   4. 의료비                      80,000원
+   5. 기타 변동비용              100,000원
+   ─────────────────────────────────────
+   소계 (변동지출)               750,000원
+
+   ─────────────────────────────────────
+   💸 총 지출                 2,850,000원
+
+═══════════════════════════════════════════════════════════════
+                            🏦 자산 현황
+═══════════════════════════════════════════════════════════════
+
+🔸 유동자산
+   1. 현금                     5,200,000원
+   2. 예적금                  12,500,000원
+   ─────────────────────────────────────
+   💎 총 자산                17,700,000원
+
+═══════════════════════════════════════════════════════════════
+                            📈 분석 및 코멘트
+═══════════════════════════════════════════════════════════════
+
+✅ 수입 대비 지출 비율: 79.2% (양호)
+✅ 저축률: 20.8% (목표 대비 양호)
+⚠️  변동지출 비중: 26.3% (관리 필요)
+
+📝 이번 달 특이사항:
+   - 투자수익이 전월 대비 증가함
+   - 적금납입을 계획대로 이행함
+   - 변동지출 관리 지속 필요
+
+📋 다음 달 계획:
+   - 변동지출 10% 절약 목표
+   - 투자 포트폴리오 재검토
+   - 비상자금 충분성 점검
+
+═══════════════════════════════════════════════════════════════
+                        보고서 종료
+═══════════════════════════════════════════════════════════════
+
+※ 이 보고서는 자동으로 생성되었습니다.
+※ 문의사항이 있으시면 담당자에게 연락해주세요.
+`;
+
+                // 보고서 표시
+                const reportDiv = document.getElementById('reportDiv');
+                reportDiv.innerHTML = '<div class="report-preview">' + reportText + '</div>';
                 
-                // === 헤더 ===
-                doc.setFillColor(30, 60, 114); // #1e3c72
-                doc.rect(15, 15, 180, 25, 'F');
+                // 복사 버튼 표시
+                document.getElementById('copyBtn').style.display = 'inline-block';
                 
-                doc.setTextColor(255, 255, 255);
-                doc.setFontSize(20);
-                doc.text('2025-09월 자금현황 보고서', 105, 30, {align: 'center'});
+                showStatus('텍스트 보고서가 성공적으로 생성되었습니다!', 'success');
                 
-                doc.setFontSize(12);
-                doc.text('생성일: ' + dateStr, 105, 37, {align: 'center'});
-                
-                yPosition = 55;
-                
-                // === 월간 요약 박스 ===
-                doc.setTextColor(0, 0, 0);
-                doc.setFillColor(232, 245, 232); // #e8f5e8
-                doc.rect(15, yPosition, 180, 30, 'F');
-                
-                doc.setFontSize(14);
-                doc.setTextColor(6, 95, 70); // #065f46
-                doc.text('월간 요약', 25, yPosition + 10);
-                
-                doc.setFontSize(11);
-                doc.setTextColor(0, 0, 0);
-                doc.text('총 수입: 3,600,000원', 25, yPosition + 18);
-                doc.text('총 지출: 2,850,000원', 75, yPosition + 18);
-                doc.text('잔여금: 750,000원', 130, yPosition + 18);
-                
-                yPosition += 45;
-                
-                // === 수입 현황 테이블 ===
-                doc.setFontSize(14);
-                doc.setTextColor(30, 60, 114);
-                doc.text('수입 현황', 15, yPosition);
-                yPosition += 10;
-                
-                const incomeData = [
-                    ['급여', '3,200,000원'],
-                    ['투자수익', '250,000원'],
-                    ['기타수익', '150,000원']
-                ];
-                
-                doc.autoTable({
-                    startY: yPosition,
-                    head: [['항목', '금액']],
-                    body: incomeData,
-                    foot: [['총 수입', '3,600,000원']],
-                    theme: 'grid',
-                    headStyles: {
-                        fillColor: [30, 60, 114],
-                        textColor: [255, 255, 255],
-                        fontSize: 11,
-                        fontStyle: 'bold'
-                    },
-                    bodyStyles: {
-                        fontSize: 10
-                    },
-                    footStyles: {
-                        fillColor: [16, 185, 129],
-                        textColor: [255, 255, 255],
-                        fontSize: 11,
-                        fontStyle: 'bold'
-                    },
-                    margin: { left: 15, right: 15 },
-                    tableWidth: 'auto',
-                    columnStyles: {
-                        0: { cellWidth: 60 },
-                        1: { cellWidth: 60, halign: 'right' }
-                    }
-                });
-                
-                yPosition = doc.lastAutoTable.finalY + 15;
-                
-                // === 지출 현황 테이블 ===
-                doc.setFontSize(14);
-                doc.setTextColor(30, 60, 114);
-                doc.text('지출 현황', 15, yPosition);
-                yPosition += 10;
-                
-                // 고정지출 테이블
-                doc.setFontSize(12);
-                doc.text('고정지출', 15, yPosition);
-                yPosition += 5;
-                
-                const fixedExpenseData = [
-                    ['대출상환', '300,000원'],
-                    ['보험료', '180,000원'],
-                    ['교통비', '120,000원'],
-                    ['통신비', '75,000원'],
-                    ['어머니생활비', '500,000원'],
-                    ['모임회비', '30,000원'],
-                    ['구독료', '45,000원'],
-                    ['적금', '800,000원'],
-                    ['기타', '50,000원']
-                ];
-                
-                doc.autoTable({
-                    startY: yPosition,
-                    head: [['항목', '금액']],
-                    body: fixedExpenseData,
-                    foot: [['고정지출 소계', '2,100,000원']],
-                    theme: 'grid',
-                    headStyles: {
-                        fillColor: [42, 82, 152],
-                        textColor: [255, 255, 255],
-                        fontSize: 10
-                    },
-                    bodyStyles: {
-                        fontSize: 9
-                    },
-                    footStyles: {
-                        fillColor: [239, 68, 68],
-                        textColor: [255, 255, 255],
-                        fontSize: 10,
-                        fontStyle: 'bold'
-                    },
-                    margin: { left: 15, right: 105 },
-                    columnStyles: {
-                        0: { cellWidth: 45 },
-                        1: { cellWidth: 45, halign: 'right' }
-                    }
-                });
-                
-                // 변동지출 (오른쪽)
-                const variableY = yPosition;
-                doc.setFontSize(12);
-                doc.text('변동지출', 105, variableY);
-                
-                const variableExpenseData = [
-                    ['변동지출 총액', '750,000원']
-                ];
-                
-                doc.autoTable({
-                    startY: variableY + 5,
-                    head: [['항목', '금액']],
-                    body: variableExpenseData,
-                    theme: 'grid',
-                    headStyles: {
-                        fillColor: [42, 82, 152],
-                        textColor: [255, 255, 255],
-                        fontSize: 10
-                    },
-                    bodyStyles: {
-                        fontSize: 9
-                    },
-                    margin: { left: 105, right: 15 },
-                    columnStyles: {
-                        0: { cellWidth: 45 },
-                        1: { cellWidth: 45, halign: 'right' }
-                    }
-                });
-                
-                yPosition = Math.max(doc.lastAutoTable.finalY, doc.autoTable.previous.finalY) + 10;
-                
-                // 총 지출
-                doc.autoTable({
-                    startY: yPosition,
-                    body: [['총 지출', '2,850,000원']],
-                    theme: 'grid',
-                    bodyStyles: {
-                        fillColor: [239, 68, 68],
-                        textColor: [255, 255, 255],
-                        fontSize: 11,
-                        fontStyle: 'bold'
-                    },
-                    margin: { left: 15, right: 15 },
-                    columnStyles: {
-                        0: { cellWidth: 60 },
-                        1: { cellWidth: 60, halign: 'right' }
-                    }
-                });
-                
-                yPosition = doc.lastAutoTable.finalY + 15;
-                
-                // === 자산 현황 테이블 ===
-                doc.setFontSize(14);
-                doc.setTextColor(30, 60, 114);
-                doc.text('자산 현황', 15, yPosition);
-                yPosition += 10;
-                
-                const assetData = [
-                    ['현금', '5,200,000원'],
-                    ['적금', '12,500,000원']
-                ];
-                
-                doc.autoTable({
-                    startY: yPosition,
-                    head: [['항목', '금액']],
-                    body: assetData,
-                    foot: [['총 자산', '17,700,000원']],
-                    theme: 'grid',
-                    headStyles: {
-                        fillColor: [30, 60, 114],
-                        textColor: [255, 255, 255],
-                        fontSize: 11,
-                        fontStyle: 'bold'
-                    },
-                    bodyStyles: {
-                        fontSize: 10
-                    },
-                    footStyles: {
-                        fillColor: [16, 185, 129],
-                        textColor: [255, 255, 255],
-                        fontSize: 12,
-                        fontStyle: 'bold'
-                    },
-                    margin: { left: 15, right: 15 },
-                    columnStyles: {
-                        0: { cellWidth: 60 },
-                        1: { cellWidth: 60, halign: 'right' }
-                    }
-                });
-                
-                // === 푸터 ===
-                const pageHeight = doc.internal.pageSize.height;
-                doc.setFontSize(8);
-                doc.setTextColor(128, 128, 128);
-                doc.text('이 보고서는 자동 생성되었습니다.', 105, pageHeight - 15, {align: 'center'});
-                doc.text('페이지 1', 185, pageHeight - 10, {align: 'right'});
-                
-                // PDF 파일 다운로드
-                const fileDate = today.getFullYear() + '-' + 
-                               String(today.getMonth() + 1).padStart(2, '0');
-                doc.save('월별자금현황_' + fileDate + '.pdf');
-                
-                showStatus('PDF 파일이 성공적으로 생성되었습니다!', 'success');
-                
-                // 미리보기 메시지 표시
-                const previewDiv = document.getElementById('previewDiv');
-                previewDiv.innerHTML = '<div class="preview">PDF 보고서가 생성되어 다운로드되었습니다.\n\n포함된 내용:\n✓ 전문적인 헤더 디자인\n✓ 월간 요약 박스\n✓ 수입 현황 테이블\n✓ 고정/변동 지출 분석\n✓ 자산 현황 요약\n✓ 웹폰트(Nanum Gothic) 적용</div>';
+                // 전역 변수에 보고서 저장 (복사용)
+                window.generatedReport = reportText;
                 
             } catch (error) {
-                console.error('PDF 생성 오류:', error);
-                showStatus('PDF 생성 중 오류가 발생했습니다: ' + error.message, 'error');
+                console.error('보고서 생성 오류:', error);
+                showStatus('보고서 생성 중 오류가 발생했습니다: ' + error.message, 'error');
+            }
+        }
+
+        function copyReport() {
+            if (window.generatedReport) {
+                navigator.clipboard.writeText(window.generatedReport).then(function() {
+                    showStatus('보고서가 클립보드에 복사되었습니다!', 'success');
+                }, function(err) {
+                    // 클립보드 API 실패 시 대체 방법
+                    const textArea = document.createElement('textarea');
+                    textArea.value = window.generatedReport;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        showStatus('보고서가 클립보드에 복사되었습니다!', 'success');
+                    } catch (err) {
+                        showStatus('복사 중 오류가 발생했습니다.', 'error');
+                    }
+                    document.body.removeChild(textArea);
+                });
             }
         }
     </script>
