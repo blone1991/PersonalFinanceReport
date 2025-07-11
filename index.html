@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>월별 자금현황 텍스트 보고서</title>
+    <title>URL 데이터 기반 월별 자금현황 보고서</title>
     <style>
         * {
             margin: 0;
@@ -43,6 +43,31 @@
 
         .main-content {
             padding: 30px;
+        }
+
+        .url-section {
+            background: #fff3cd;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 5px solid #856404;
+        }
+
+        .url-section h3 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+
+        .url-example {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+            overflow-x: auto;
         }
 
         .auto-section {
@@ -85,6 +110,28 @@
             border: 1px solid #93c5fd;
         }
 
+        .status.warning {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fcd34d;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4f46e5;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         .btn {
             background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
             color: white;
@@ -101,6 +148,13 @@
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 15px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
         .report-preview {
@@ -127,53 +181,165 @@
         .copy-btn:hover {
             box-shadow: 0 8px 15px rgba(16, 185, 129, 0.3);
         }
+
+        .download-btn {
+            background: #f59e0b;
+            font-size: 0.9em;
+            padding: 8px 16px;
+        }
+
+        .download-btn:hover {
+            box-shadow: 0 8px 15px rgba(245, 158, 11, 0.3);
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .data-item {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 12px;
+        }
+
+        .data-item strong {
+            color: #495057;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .data-value {
+            font-family: monospace;
+            color: #28a745;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>📄 월별 자금현황 텍스트 보고서</h1>
-            <p>한국어 텍스트 기반 재무 보고서 생성</p>
+            <h1>📄 URL 데이터 기반 자금현황 보고서</h1>
+            <p>URL 파라미터로 전달받은 데이터를 기반으로 보고서 생성</p>
         </div>
 
         <div class="main-content">
+            <div class="url-section">
+                <h3>🔗 URL 파라미터 사용법</h3>
+                <p>다음과 같은 형태로 URL에 데이터를 포함시켜 주세요:</p>
+                <div class="url-example">
+https://your-site.com/?rowId=123&income_total=3600000&income_salary=3200000&income_investment=250000&income_other=150000&expense_fixed_total=2100000&expense_transportation=120000&expense_subscription=45000&expense_loan=300000&expense_insurance=180000&expense_family=500000&expense_savings=800000&expense_communication=75000&expense_other_fixed=50000&expense_variable=750000&asset_cash=5200000&asset_savings=12500000&target_month=2025-09
+                </div>
+                
+                <h4>📋 지원하는 파라미터 목록:</h4>
+                <div class="data-grid">
+                    <div class="data-item">
+                        <strong>기본 정보</strong>
+                        rowId, target_month
+                    </div>
+                    <div class="data-item">
+                        <strong>수입 관련</strong>
+                        income_total, income_salary, income_investment, income_other
+                    </div>
+                    <div class="data-item">
+                        <strong>고정지출</strong>
+                        expense_fixed_total, expense_transportation, expense_subscription, expense_loan, expense_insurance, expense_family, expense_savings, expense_communication, expense_other_fixed
+                    </div>
+                    <div class="data-item">
+                        <strong>변동지출 & 자산</strong>
+                        expense_variable, asset_cash, asset_savings
+                    </div>
+                </div>
+            </div>
+
             <div class="auto-section">
-                <h3>📊 텍스트 보고서 생성</h3>
-                <p>복사하여 사용할 수 있는 한국어 텍스트 형태의 월별 자금현황 보고서</p>
-                <button class="btn" onclick="generateTextReport()">📄 텍스트 보고서 생성</button>
+                <h3>📊 보고서 생성</h3>
+                <p>URL에서 데이터를 읽어와 자동으로 보고서를 생성합니다</p>
+                <button class="btn" onclick="generateReportFromURL()" id="generateBtn">📄 URL 데이터로 보고서 생성</button>
                 <button class="btn copy-btn" onclick="copyReport()" id="copyBtn" style="display:none;">📋 텍스트 복사</button>
+                <button class="btn download-btn" onclick="downloadReport()" id="downloadBtn" style="display:none;">💾 TXT 파일 다운로드</button>
             </div>
 
             <div id="statusDiv"></div>
+            <div id="dataPreviewDiv"></div>
             <div id="reportDiv"></div>
         </div>
     </div>
 
     <script>
-        // URL 파라미터에서 rowId 추출
+        // URL 파라미터 파싱
         const urlParams = new URLSearchParams(window.location.search);
-        const rowId = urlParams.get('rowId');
+        
+        // 전역 변수
+        window.urlData = null;
+        window.generatedReport = null;
 
         window.onload = function() {
-            if (rowId) {
-                showStatus('ROW ID가 감지되었습니다: ' + rowId, 'info');
+            parseURLData();
+            
+            if (window.urlData && Object.keys(window.urlData).length > 1) {
+                showStatus('URL에서 데이터를 감지했습니다. 자동으로 보고서를 생성합니다...', 'info');
                 setTimeout(() => {
-                    generateTextReport();
+                    generateReportFromURL();
                 }, 2000);
             } else {
-                showStatus('테스트 모드입니다. 버튼을 클릭해서 텍스트 보고서를 생성해보세요.', 'info');
+                showStatus('URL 파라미터에 데이터가 없습니다. 테스트 데이터를 사용합니다.', 'warning');
+                generateTestReport();
             }
         };
 
-        function showStatus(message, type) {
-            const statusDiv = document.getElementById('statusDiv');
-            statusDiv.innerHTML = '<div class="status ' + type + '">' + message + '</div>';
+        function parseURLData() {
+            const data = {};
+            
+            // 모든 URL 파라미터를 순회하면서 데이터 추출
+            for (const [key, value] of urlParams.entries()) {
+                if (key.startsWith('income_') || key.startsWith('expense_') || key.startsWith('asset_') || 
+                    key === 'rowId' || key === 'target_month') {
+                    
+                    // 숫자 값은 정수로 변환
+                    if (key !== 'rowId' && key !== 'target_month' && !isNaN(value)) {
+                        data[key] = parseInt(value);
+                    } else {
+                        data[key] = value;
+                    }
+                }
+            }
+            
+            window.urlData = data;
+            
+            // 데이터 미리보기 표시
+            if (Object.keys(data).length > 0) {
+                const previewDiv = document.getElementById('dataPreviewDiv');
+                previewDiv.innerHTML = `
+                    <h4>📋 URL에서 읽어온 데이터:</h4>
+                    <div class="data-grid">
+                        ${Object.entries(data).map(([key, value]) => `
+                            <div class="data-item">
+                                <strong>${key}</strong>
+                                <div class="data-value">${typeof value === 'number' ? value.toLocaleString() : value}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
         }
 
-        function generateTextReport() {
-            showStatus('텍스트 보고서를 생성하는 중...', 'info');
-            
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusDiv');
+            const loadingIcon = type === 'info' && message.includes('중') ? '<span class="loading"></span>' : '';
+            statusDiv.innerHTML = '<div class="status ' + type + '">' + loadingIcon + message + '</div>';
+        }
+
+        function generateReportFromURL() {
+            showStatus('URL 데이터를 기반으로 보고서를 생성하는 중...', 'info');
+
             try {
+                const data = window.urlData || {};
+                
                 // 현재 날짜
                 const today = new Date();
                 const year = today.getFullYear();
@@ -181,116 +347,181 @@
                 const date = String(today.getDate()).padStart(2, '0');
                 const dateStr = `${year}년 ${month}월 ${date}일`;
                 
+                // URL 데이터에서 값 추출 (기본값 포함)
+                const rowId = data.rowId || 'URL에서 전달받음';
+                const targetMonth = data.target_month || `${year}-${month}`;
+                
+                // 수입 데이터
+                const totalIncome = data.income_total || 0;
+                const salaryIncome = data.income_salary || 0;
+                const investmentIncome = data.income_investment || 0;
+                const otherIncome = data.income_other || 0;
+
+                // 지출 데이터
+                const totalFixedExpense = data.expense_fixed_total || 0;
+                const variableExpense = data.expense_variable || 0;
+                const totalExpense = totalFixedExpense + variableExpense;
+
+                // 고정지출 세부 항목
+                const transportation = data.expense_transportation || 0;
+                const subscription = data.expense_subscription || 0;
+                const loanPayment = data.expense_loan || 0;
+                const insurance = data.expense_insurance || 0;
+                const familySupport = data.expense_family || 0;
+                const savings = data.expense_savings || 0;
+                const communication = data.expense_communication || 0;
+                const otherFixed = data.expense_other_fixed || 0;
+
+                // 자산 데이터
+                const cashAsset = data.asset_cash || 0;
+                const savingsAsset = data.asset_savings || 0;
+                const totalAsset = cashAsset + savingsAsset;
+
+                // 수지 계산
+                const balance = totalIncome - totalExpense;
+                const savingsRate = totalIncome > 0 ? ((balance / totalIncome) * 100).toFixed(1) : 0;
+                const expenseRate = totalIncome > 0 ? ((totalExpense / totalIncome) * 100).toFixed(1) : 0;
+
+                // 대상월 포맷팅
+                const targetMonthFormatted = targetMonth ? 
+                    new Date(targetMonth + '-01').toLocaleDateString('ko-KR', {year: 'numeric', month: 'long'}) :
+                    `${year}년 ${month}월`;
+
                 // 보고서 텍스트 생성
                 const reportText = `
 ═══════════════════════════════════════════════════════════════
-                        ${year}년 ${month}월 자금현황 보고서
+                        ${targetMonthFormatted} 자금현황 보고서
 ═══════════════════════════════════════════════════════════════
 
 📅 보고서 생성일: ${dateStr}
-📋 보고 대상: ${year}년 ${month}월
-👤 작성자: 자동생성시스템
+📋 보고 대상: ${targetMonthFormatted}
+👤 데이터 출처: URL 파라미터 (${rowId})
 
 ═══════════════════════════════════════════════════════════════
                             📊 월간 요약
 ═══════════════════════════════════════════════════════════════
 
-💰 이번 달 총 수입:        3,600,000원
-💸 이번 달 총 지출:        2,850,000원
-📈 이번 달 수지차액:          750,000원
-📊 수지율:                     79.2%
+💰 이번 달 총 수입:        ${totalIncome.toLocaleString()}원
+💸 이번 달 총 지출:        ${totalExpense.toLocaleString()}원
+📈 이번 달 수지차액:        ${balance.toLocaleString()}원
+📊 지출율:                     ${expenseRate}%
+📊 저축율:                     ${savingsRate}%
 
 ═══════════════════════════════════════════════════════════════
                             💵 수입 현황
 ═══════════════════════════════════════════════════════════════
 
-1. 급여소득                   3,200,000원
-2. 투자수익                     250,000원
-3. 기타수입                     150,000원
+1. 급여소득                   ${salaryIncome.toLocaleString()}원
+2. 투자수익                   ${investmentIncome.toLocaleString()}원
+3. 기타수입                   ${otherIncome.toLocaleString()}원
    ─────────────────────────────────────
-   💰 총 수입                 3,600,000원
+   💰 총 수입                 ${totalIncome.toLocaleString()}원
 
 ═══════════════════════════════════════════════════════════════
                             💸 지출 현황
 ═══════════════════════════════════════════════════════════════
 
 🔸 고정지출
-   1. 대출상환                   300,000원
-   2. 보험료                     180,000원
-   3. 교통비                     120,000원
-   4. 통신비                      75,000원
-   5. 생활비                     500,000원
-   6. 동호회비                    30,000원
-   7. 구독료                      45,000원
-   8. 적금                       800,000원
-   9. 기타                        50,000원
+   1. 대출상환                   ${loanPayment.toLocaleString()}원
+   2. 보험료                     ${insurance.toLocaleString()}원
+   3. 교통비                     ${transportation.toLocaleString()}원
+   4. 통신비                     ${communication.toLocaleString()}원
+   5. 가족 생활비                ${familySupport.toLocaleString()}원
+   6. 구독료                     ${subscription.toLocaleString()}원
+   7. 적금                       ${savings.toLocaleString()}원
+   8. 기타                       ${otherFixed.toLocaleString()}원
    ─────────────────────────────────────
-   소계 (고정지출)             2,100,000원
+   소계 (고정지출)             ${totalFixedExpense.toLocaleString()}원
 
 🔸 변동지출
-   1. 식비/외식                  300,000원
-   2. 쇼핑/의류                  150,000원
-   3. 취미/여가                  120,000원
-   4. 의료비                      80,000원
-   5. 기타 변동비용              100,000원
+   1. 변동지출 합계              ${variableExpense.toLocaleString()}원
    ─────────────────────────────────────
-   소계 (변동지출)               750,000원
+   소계 (변동지출)             ${variableExpense.toLocaleString()}원
 
    ─────────────────────────────────────
-   💸 총 지출                 2,850,000원
+   💸 총 지출                 ${totalExpense.toLocaleString()}원
 
 ═══════════════════════════════════════════════════════════════
                             🏦 자산 현황
 ═══════════════════════════════════════════════════════════════
 
 🔸 유동자산
-   1. 현금                     5,200,000원
-   2. 예적금                  12,500,000원
+   1. 현금                     ${cashAsset.toLocaleString()}원
+   2. 예적금                   ${savingsAsset.toLocaleString()}원
    ─────────────────────────────────────
-   💎 총 자산                17,700,000원
+   💎 총 자산                ${totalAsset.toLocaleString()}원
 
 ═══════════════════════════════════════════════════════════════
                             📈 분석 및 코멘트
 ═══════════════════════════════════════════════════════════════
 
-✅ 수입 대비 지출 비율: 79.2% (양호)
-✅ 저축률: 20.8% (목표 대비 양호)
-⚠️  변동지출 비중: 26.3% (관리 필요)
+✅ 수입 대비 지출 비율: ${expenseRate}% ${parseFloat(expenseRate) < 80 ? '(양호)' : parseFloat(expenseRate) < 90 ? '(보통)' : '(주의)'}
+${balance > 0 ? '✅' : '⚠️'} 저축률: ${savingsRate}% ${parseFloat(savingsRate) > 20 ? '(우수)' : parseFloat(savingsRate) > 10 ? '(양호)' : '(개선 필요)'}
+📊 고정지출 비중: ${totalIncome > 0 ? ((totalFixedExpense / totalIncome) * 100).toFixed(1) : 0}%
 
 📝 이번 달 특이사항:
-   - 투자수익이 전월 대비 증가함
-   - 적금납입을 계획대로 이행함
-   - 변동지출 관리 지속 필요
+   - URL 파라미터를 통해 실시간으로 데이터를 받아왔습니다
+   - 총 자산: ${totalAsset.toLocaleString()}원
+   ${balance > 0 ? '- 흑자 달성!' : '- 적자 발생, 지출 관리 필요'}
 
 📋 다음 달 계획:
-   - 변동지출 10% 절약 목표
-   - 투자 포트폴리오 재검토
-   - 비상자금 충분성 점검
+   - 지속적인 가계부 관리
+   - 데이터 연동 시스템 활용
+   ${parseFloat(expenseRate) > 85 ? '- 지출 절약 계획 수립' : '- 현재 수준 유지'}
 
 ═══════════════════════════════════════════════════════════════
                         보고서 종료
 ═══════════════════════════════════════════════════════════════
 
-※ 이 보고서는 자동으로 생성되었습니다.
-※ 문의사항이 있으시면 담당자에게 연락해주세요.
+※ 이 보고서는 URL 파라미터 데이터에서 자동으로 생성되었습니다.
+※ 데이터 소스: ${rowId}
+※ 생성 시간: ${dateStr}
 `;
 
                 // 보고서 표시
                 const reportDiv = document.getElementById('reportDiv');
                 reportDiv.innerHTML = '<div class="report-preview">' + reportText + '</div>';
                 
-                // 복사 버튼 표시
+                // 버튼들 표시
                 document.getElementById('copyBtn').style.display = 'inline-block';
+                document.getElementById('downloadBtn').style.display = 'inline-block';
                 
-                showStatus('텍스트 보고서가 성공적으로 생성되었습니다!', 'success');
+                showStatus('URL 데이터 기반 보고서가 성공적으로 생성되었습니다!', 'success');
                 
-                // 전역 변수에 보고서 저장 (복사용)
+                // 전역 변수에 보고서 저장
                 window.generatedReport = reportText;
                 
             } catch (error) {
                 console.error('보고서 생성 오류:', error);
                 showStatus('보고서 생성 중 오류가 발생했습니다: ' + error.message, 'error');
             }
+        }
+
+        function generateTestReport() {
+            // 테스트 데이터로 보고서 생성
+            const testData = {
+                rowId: 'TEST_DATA',
+                target_month: '2025-07',
+                income_total: 3600000,
+                income_salary: 3200000,
+                income_investment: 250000,
+                income_other: 150000,
+                expense_fixed_total: 2100000,
+                expense_transportation: 120000,
+                expense_subscription: 45000,
+                expense_loan: 300000,
+                expense_insurance: 180000,
+                expense_family: 500000,
+                expense_savings: 800000,
+                expense_communication: 75000,
+                expense_other_fixed: 80000,
+                expense_variable: 750000,
+                asset_cash: 5200000,
+                asset_savings: 12500000
+            };
+            
+            window.urlData = testData;
+            generateReportFromURL();
         }
 
         function copyReport() {
@@ -311,6 +542,29 @@
                     }
                     document.body.removeChild(textArea);
                 });
+            }
+        }
+
+        function downloadReport() {
+            if (window.generatedReport) {
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const date = String(today.getDate()).padStart(2, '0');
+                
+                const filename = `월별자금현황보고서_${year}-${month}-${date}.txt`;
+                
+                const blob = new Blob([window.generatedReport], { type: 'text/plain;charset=utf-8' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                showStatus('TXT 파일이 다운로드되었습니다: ' + filename, 'success');
             }
         }
     </script>
