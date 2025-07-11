@@ -230,28 +230,35 @@
         <div class="main-content">
             <div class="url-section">
                 <h3>🔗 URL 파라미터 사용법</h3>
-                <p>다음과 같은 형태로 URL에 데이터를 포함시켜 주세요:</p>
+                
+                <h4>💡 새로운 방식 (JSON 데이터 - 권장)</h4>
+                <p>구조화된 JSON 데이터를 사용하여 더 체계적으로 데이터를 전송:</p>
+                <div class="url-example">
+https://your-site.com/?data={"rowId":"123","targetMonth":"2025-09","income":{"total":3600000,"salary":3200000,"investment":250000,"other":150000},"expense":{"fixed":{"total":2100000,"transportation":120000,"subscription":45000,"loan":300000,"insurance":180000,"family":500000,"savings":800000,"communication":75000,"other":50000},"variable":750000},"assets":[{"name":"현금","value":5200000,"type":"liquid"},{"name":"적금","value":12500000,"type":"savings"},{"name":"주식","value":3000000,"type":"investment"}]}
+                </div>
+                
+                <h4>🔄 기존 방식 (개별 파라미터 - 하위 호환성)</h4>
                 <div class="url-example">
 https://your-site.com/?rowId=123&income_total=3600000&income_salary=3200000&income_investment=250000&income_other=150000&expense_fixed_total=2100000&expense_transportation=120000&expense_subscription=45000&expense_loan=300000&expense_insurance=180000&expense_family=500000&expense_savings=800000&expense_communication=75000&expense_other_fixed=50000&expense_variable=750000&asset_cash=5200000&asset_savings=12500000&target_month=2025-09
                 </div>
                 
-                <h4>📋 지원하는 파라미터 목록:</h4>
+                <h4>📋 JSON 데이터 구조:</h4>
                 <div class="data-grid">
                     <div class="data-item">
                         <strong>기본 정보</strong>
-                        rowId, target_month
+                        rowId, targetMonth
                     </div>
                     <div class="data-item">
-                        <strong>수입 관련</strong>
-                        income_total, income_salary, income_investment, income_other
+                        <strong>수입 (income)</strong>
+                        total, salary, investment, other
                     </div>
                     <div class="data-item">
-                        <strong>고정지출</strong>
-                        expense_fixed_total, expense_transportation, expense_subscription, expense_loan, expense_insurance, expense_family, expense_savings, expense_communication, expense_other_fixed
+                        <strong>고정지출 (expense.fixed)</strong>
+                        total, transportation, subscription, loan, insurance, family, savings, communication, other
                     </div>
                     <div class="data-item">
-                        <strong>변동지출 & 자산</strong>
-                        expense_variable, asset_cash, asset_savings
+                        <strong>변동지출 & 자산 배열</strong>
+                        expense.variable, assets[{name, value, type}]
                     </div>
                 </div>
             </div>
@@ -293,18 +300,30 @@ https://your-site.com/?rowId=123&income_total=3600000&income_salary=3200000&inco
         };
 
         function parseURLData() {
-            const data = {};
+            let data = {};
             
-            // 모든 URL 파라미터를 순회하면서 데이터 추출
-            for (const [key, value] of urlParams.entries()) {
-                if (key.startsWith('income_') || key.startsWith('expense_') || key.startsWith('asset_') || 
-                    key === 'rowId' || key === 'target_month') {
-                    
-                    // 숫자 값은 정수로 변환
-                    if (key !== 'rowId' && key !== 'target_month' && !isNaN(value)) {
-                        data[key] = parseInt(value);
-                    } else {
-                        data[key] = value;
+            // JSON 데이터 파라미터 체크 (새로운 방식)
+            const jsonData = urlParams.get('data');
+            if (jsonData) {
+                try {
+                    data = JSON.parse(decodeURIComponent(jsonData));
+                    console.log('JSON 데이터 파싱 성공:', data);
+                } catch (error) {
+                    console.error('JSON 파싱 오류:', error);
+                    showStatus('JSON 데이터 파싱 중 오류가 발생했습니다: ' + error.message, 'error');
+                }
+            } else {
+                // 기존 방식 (개별 파라미터) - 하위 호환성
+                for (const [key, value] of urlParams.entries()) {
+                    if (key.startsWith('income_') || key.startsWith('expense_') || key.startsWith('asset_') || 
+                        key === 'rowId' || key === 'target_month') {
+                        
+                        // 숫자 값은 정수로 변환
+                        if (key !== 'rowId' && key !== 'target_month' && !isNaN(value)) {
+                            data[key] = parseInt(value);
+                        } else {
+                            data[key] = value;
+                        }
                     }
                 }
             }
@@ -347,35 +366,76 @@ https://your-site.com/?rowId=123&income_total=3600000&income_salary=3200000&inco
                 const date = String(today.getDate()).padStart(2, '0');
                 const dateStr = `${year}년 ${month}월 ${date}일`;
                 
-                // URL 데이터에서 값 추출 (기본값 포함)
-                const rowId = data.rowId || 'URL에서 전달받음';
-                const targetMonth = data.target_month || `${year}-${month}`;
+                // 데이터 형식 감지 및 값 추출
+                let rowId, targetMonth, totalIncome, salaryIncome, investmentIncome, otherIncome;
+                let totalFixedExpense, variableExpense, totalExpense;
+                let transportation, subscription, loanPayment, insurance, familySupport, savings, communication, otherFixed;
+                let cashAsset, savingsAsset, totalAsset;
                 
-                // 수입 데이터
-                const totalIncome = data.income_total || 0;
-                const salaryIncome = data.income_salary || 0;
-                const investmentIncome = data.income_investment || 0;
-                const otherIncome = data.income_other || 0;
+                if (data.income && typeof data.income === 'object') {
+                    // 새로운 JSON 형식
+                    rowId = data.rowId || 'JSON에서 전달받음';
+                    targetMonth = data.targetMonth || `${year}-${month}`;
+                    
+                    // 수입 데이터
+                    totalIncome = data.income?.total || 0;
+                    salaryIncome = data.income?.salary || 0;
+                    investmentIncome = data.income?.investment || 0;
+                    otherIncome = data.income?.other || 0;
 
-                // 지출 데이터
-                const totalFixedExpense = data.expense_fixed_total || 0;
-                const variableExpense = data.expense_variable || 0;
-                const totalExpense = totalFixedExpense + variableExpense;
+                    // 지출 데이터
+                    totalFixedExpense = data.expense?.fixed?.total || 0;
+                    variableExpense = data.expense?.variable || 0;
+                    totalExpense = totalFixedExpense + variableExpense;
 
-                // 고정지출 세부 항목
-                const transportation = data.expense_transportation || 0;
-                const subscription = data.expense_subscription || 0;
-                const loanPayment = data.expense_loan || 0;
-                const insurance = data.expense_insurance || 0;
-                const familySupport = data.expense_family || 0;
-                const savings = data.expense_savings || 0;
-                const communication = data.expense_communication || 0;
-                const otherFixed = data.expense_other_fixed || 0;
+                    // 고정지출 세부 항목
+                    transportation = data.expense?.fixed?.transportation || 0;
+                    subscription = data.expense?.fixed?.subscription || 0;
+                    loanPayment = data.expense?.fixed?.loan || 0;
+                    insurance = data.expense?.fixed?.insurance || 0;
+                    familySupport = data.expense?.fixed?.family || 0;
+                    savings = data.expense?.fixed?.savings || 0;
+                    communication = data.expense?.fixed?.communication || 0;
+                    otherFixed = data.expense?.fixed?.other || 0;
 
-                // 자산 데이터
-                const cashAsset = data.asset_cash || 0;
-                const savingsAsset = data.asset_savings || 0;
-                const totalAsset = cashAsset + savingsAsset;
+                    // 자산 데이터 (배열 구조)
+                    const assets = data.assets || [];
+                    totalAsset = assets.reduce((sum, asset) => sum + (asset.value || 0), 0);
+                    
+                    // 기존 호환성을 위한 개별 자산 추출
+                    cashAsset = assets.find(a => a.name === '현금')?.value || 0;
+                    savingsAsset = assets.find(a => a.name === '적금')?.value || 0;
+                } else {
+                    // 기존 형식 (하위 호환성)
+                    rowId = data.rowId || 'URL에서 전달받음';
+                    targetMonth = data.target_month || `${year}-${month}`;
+                    
+                    // 수입 데이터
+                    totalIncome = data.income_total || 0;
+                    salaryIncome = data.income_salary || 0;
+                    investmentIncome = data.income_investment || 0;
+                    otherIncome = data.income_other || 0;
+
+                    // 지출 데이터
+                    totalFixedExpense = data.expense_fixed_total || 0;
+                    variableExpense = data.expense_variable || 0;
+                    totalExpense = totalFixedExpense + variableExpense;
+
+                    // 고정지출 세부 항목
+                    transportation = data.expense_transportation || 0;
+                    subscription = data.expense_subscription || 0;
+                    loanPayment = data.expense_loan || 0;
+                    insurance = data.expense_insurance || 0;
+                    familySupport = data.expense_family || 0;
+                    savings = data.expense_savings || 0;
+                    communication = data.expense_communication || 0;
+                    otherFixed = data.expense_other_fixed || 0;
+
+                    // 자산 데이터
+                    cashAsset = data.asset_cash || 0;
+                    savingsAsset = data.asset_savings || 0;
+                    totalAsset = cashAsset + savingsAsset;
+                }
 
                 // 수지 계산
                 const balance = totalIncome - totalExpense;
@@ -386,6 +446,18 @@ https://your-site.com/?rowId=123&income_total=3600000&income_salary=3200000&inco
                 const targetMonthFormatted = targetMonth ? 
                     new Date(targetMonth + '-01').toLocaleDateString('ko-KR', {year: 'numeric', month: 'long'}) :
                     `${year}년 ${month}월`;
+
+                // 자산 목록 동적 생성
+                const assets = data.assets || [];
+                let assetListText = '';
+                if (assets.length > 0) {
+                    assetListText = assets.map((asset, index) => 
+                        `   ${index + 1}. ${asset.name}${' '.repeat(Math.max(1, 20 - asset.name.length))}${asset.value.toLocaleString()}원`
+                    ).join('\n');
+                } else {
+                    // 기존 방식 폴백
+                    assetListText = `   1. 현금${' '.repeat(17)}${cashAsset.toLocaleString()}원\n   2. 예적금${' '.repeat(15)}${savingsAsset.toLocaleString()}원`;
+                }
 
                 // 보고서 텍스트 생성
                 const reportText = `
@@ -445,9 +517,8 @@ https://your-site.com/?rowId=123&income_total=3600000&income_salary=3200000&inco
                             🏦 자산 현황
 ═══════════════════════════════════════════════════════════════
 
-🔸 유동자산
-   1. 현금                     ${cashAsset.toLocaleString()}원
-   2. 예적금                   ${savingsAsset.toLocaleString()}원
+🔸 자산 현황
+${assetListText}
    ─────────────────────────────────────
    💎 총 자산                ${totalAsset.toLocaleString()}원
 
@@ -498,26 +569,36 @@ ${balance > 0 ? '✅' : '⚠️'} 저축률: ${savingsRate}% ${parseFloat(saving
         }
 
         function generateTestReport() {
-            // 테스트 데이터로 보고서 생성
+            // 테스트 데이터로 보고서 생성 (새로운 JSON 형식)
             const testData = {
-                rowId: 'TEST_DATA',
-                target_month: '2025-07',
-                income_total: 3600000,
-                income_salary: 3200000,
-                income_investment: 250000,
-                income_other: 150000,
-                expense_fixed_total: 2100000,
-                expense_transportation: 120000,
-                expense_subscription: 45000,
-                expense_loan: 300000,
-                expense_insurance: 180000,
-                expense_family: 500000,
-                expense_savings: 800000,
-                expense_communication: 75000,
-                expense_other_fixed: 80000,
-                expense_variable: 750000,
-                asset_cash: 5200000,
-                asset_savings: 12500000
+                rowId: 'TEST_DATA_JSON',
+                targetMonth: '2025-07',
+                income: {
+                    total: 3600000,
+                    salary: 3200000,
+                    investment: 250000,
+                    other: 150000
+                },
+                expense: {
+                    fixed: {
+                        total: 2100000,
+                        transportation: 120000,
+                        subscription: 45000,
+                        loan: 300000,
+                        insurance: 180000,
+                        family: 500000,
+                        savings: 800000,
+                        communication: 75000,
+                        other: 80000
+                    },
+                    variable: 750000
+                },
+                assets: [
+                    {name: "현금", value: 5200000, type: "liquid"},
+                    {name: "적금", value: 12500000, type: "savings"},
+                    {name: "주식", value: 3000000, type: "investment"},
+                    {name: "부동산", value: 200000000, type: "property"}
+                ]
             };
             
             window.urlData = testData;
